@@ -53,7 +53,8 @@ echo liteimage_picture(
     [1920, 0],               // Default (width, height) for full‑size thumbnail
     ['class' => 'my-image'], // Extra HTML attributes
     ['768' => [1280, 0]],    // ≥ 768 px — use 1280 px wide image
-    ['767' => [768, 480]]    // ≤ 767 px — use 768 × 480 fallback
+    ['767' => [768, 480]],    // ≤ 767 px — use 768 × 480 fallback
+    $mobile_image_id
 );
 ```
 
