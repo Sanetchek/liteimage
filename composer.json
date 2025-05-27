@@ -1,0 +1,47 @@
+{
+  "name": "sanetchek/liteimage",
+  "type": "wordpress-plugin",
+  "version": "1.0.0",
+  "description": "Image optimization plugin for WordPress that supports WebP, JPEG, and PNG conversion.",
+  "keywords": [
+    "WordPress",
+    "Plugin",
+    "Image Optimization",
+    "WebP",
+    "Intervention Image"
+  ],
+  "homepage": "https://github.com/Sanetchek/liteimage",
+  "license": "GPL-2.0-or-later",
+  "authors": [
+    {
+      "name": "Contributors",
+      "homepage": "https://github.com/Sanetchek/liteimage/graphs/contributors"
+    }
+  ],
+  "require": {
+    "php": ">=5.6",
+    "mpdf/mpdf": "^8.1",
+    "vlucas/phpdotenv": "^5.6",
+    "intervention/image": "^2.7"
+  },
+  "require-dev": {
+    "dealerdirect/phpcodesniffer-composer-installer": "^0.7.0",
+    "wptrt/wpthemereview": "^0.2.1",
+    "php-parallel-lint/php-parallel-lint": "^1.2.0",
+    "wp-cli/i18n-command": "^2.2.5"
+  },
+  "scripts": {
+    "lint:wpcs": "@php ./vendor/squizlabs/php_codesniffer/bin/phpcs",
+    "lint:php": "@php ./vendor/bin/parallel-lint --exclude .git --exclude vendor .",
+    "make-pot": "wp i18n make-pot . languages/liteimage.pot"
+  },
+  "support": {
+    "issues": "https://github.com/Sanetchek/liteimage/issues",
+    "source": "https://github.com/Sanetchek/liteimage"
+  },
+  "config": {
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    }
+  }
+}

@@ -1,0 +1,125 @@
+# Copyright (C) 2025 Oleksandr Gryshko
+# This file is distributed under the same license as the LiteImage plugin.
+msgid ""
+msgstr ""
+"Project-Id-Version: LiteImage 2.1\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/liteimage\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2025-05-28T02:03:31+03:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: liteimage\n"
+
+#. Plugin Name of the plugin
+#: liteimage.php
+msgid "LiteImage"
+msgstr ""
+
+#. Description of the plugin
+#: liteimage.php
+msgid "Optimizes images with dynamic thumbnail sizes, WebP support, and accessibility."
+msgstr ""
+
+#. Author of the plugin
+#: liteimage.php
+msgid "Oleksandr Gryshko"
+msgstr ""
+
+#. Author URI of the plugin
+#: liteimage.php
+msgid "https://github.com/Sanetchek"
+msgstr ""
+
+#: liteimage.php:78
+msgid "WebP conversion requires <strong>cwebp</strong> or WebP support in GD/Imagick. Using compressed JPEG."
+msgstr ""
+
+#: liteimage.php:80
+msgid "cwebp not found, using Intervention Image for WebP. Install cwebp for better performance."
+msgstr ""
+
+#: liteimage.php:315
+#: liteimage.php:316
+#: liteimage.php:334
+msgid "LiteImage Settings"
+msgstr ""
+
+#: liteimage.php:329
+msgid "Thumbnails cleared successfully! New sizes will be generated on next call to liteimage_picture."
+msgstr ""
+
+#: liteimage.php:335
+msgid "Clears all existing thumbnails. New thumbnails will be generated when liteimage_picture is called."
+msgstr ""
+
+#: liteimage.php:338
+msgid "Clear Thumbnails"
+msgstr ""
+
+#: liteimage.php:340
+msgid "Using the liteimage_picture Function"
+msgstr ""
+
+#: liteimage.php:341
+msgid "The <code>liteimage_picture</code> function outputs responsive images with WebP support, lazy loading, and accessibility attributes. Thumbnails are generated dynamically based on specified sizes."
+msgstr ""
+
+#: liteimage.php:342
+msgid "Function Syntax"
+msgstr ""
+
+#: liteimage.php:344
+msgid "Parameters"
+msgstr ""
+
+#: liteimage.php:346
+msgid "$image_id"
+msgstr ""
+
+#: liteimage.php:346
+msgid "The ID of the image attachment."
+msgstr ""
+
+#: liteimage.php:347
+msgid "$thumb"
+msgstr ""
+
+#: liteimage.php:347
+msgid "Default image size (e.g., \"full\") or array [width, height] (e.g., [1280, 0]). Defaults to [1920, 0]."
+msgstr ""
+
+#: liteimage.php:348
+msgid "$args"
+msgstr ""
+
+#: liteimage.php:348
+msgid "Additional attributes for the <img> tag, e.g., [\"class\" => \"my-image\", \"alt\" => \"Description\"]."
+msgstr ""
+
+#: liteimage.php:349
+msgid "$min"
+msgstr ""
+
+#: liteimage.php:349
+msgid "Array of min-width media queries and sizes (e.g., [\"768\" => [1920, 0]])."
+msgstr ""
+
+#: liteimage.php:350
+msgid "$max"
+msgstr ""
+
+#: liteimage.php:350
+msgid "Array of max-width media queries and sizes (e.g., [\"767\" => [768, 480]])."
+msgstr ""
+
+#: liteimage.php:359
+msgid "Thumbnail Sizes"
+msgstr ""
+
+#: liteimage.php:376
+msgid "No thumbnails"
+msgstr ""
