@@ -25,7 +25,12 @@ use Intervention\Image\ImageManagerStatic as Image;
 define('LITEIMAGE_LOG_FILE', __DIR__ . '/liteimage-debug.log');
 define('LITEIMAGE_LOG_ACTIVE', false);
 
-// Helper functions
+
+/**
+ * Logs a message to the LiteImage debug log file.
+ *
+ * @param string $message The log message.
+ */
 function liteimage_log($message) {
     if (!LITEIMAGE_LOG_ACTIVE) {
         return;
@@ -33,6 +38,14 @@ function liteimage_log($message) {
     error_log(date('[Y-m-d H:i:s] ') . $message . PHP_EOL, 3, LITEIMAGE_LOG_FILE);
 }
 
+/**
+ * Checks if the cwebp command is available.
+ *
+ * The cwebp command is checked on all platforms except Windows, where it is
+ * not installed by default and requires manual installation.
+ *
+ * @return bool True if cwebp is available, false otherwise.
+ */
 function is_cwebp_available() {
     static $is_available = null;
     if ($is_available === null) {
@@ -48,6 +61,13 @@ function is_cwebp_available() {
     return $is_available;
 }
 
+/**
+ * Checks if WebP image support is available.
+ *
+ * Checks for the presence of imagewebp() or Imagick::WEBP support.
+ *
+ * @return bool True if WebP support is available, false otherwise.
+ */
 function is_webp_supported() {
     static $supported = null;
     if ($supported === null) {
@@ -60,14 +80,30 @@ function is_webp_supported() {
     return $supported;
 }
 
-// Load plugin text domain for localization
-add_action('plugins_loaded', 'liteimage_load_textdomain');
+/**
+ * Loads the plugin textdomain for localization.
+ *
+ * @since 1.0.0
+ */
 function liteimage_load_textdomain() {
     load_plugin_textdomain('liteimage', false, dirname(plugin_basename(__FILE__)) . '/languages');
 }
+add_action('plugins_loaded', 'liteimage_load_textdomain');
 
-// Admin notices
-add_action('admin_notices', 'liteimage_admin_notices');
+
+/**
+ * Displays admin notices on the LiteImage settings page.
+ *
+ * The notices provide information about the availability of cwebp and WebP support
+ * in the system. If cwebp is not available and WebP support is not available in
+ * GD/Imagick, a warning notice is displayed indicating that compressed JPEG will
+ * be used. If cwebp is not available but WebP support is available in
+ * GD/Imagick, an informational notice is displayed indicating that Intervention
+ * Image will be used for WebP conversion and recommending installation of cwebp
+ * for better performance.
+ *
+ * @since 1.0.0
+ */
 function liteimage_admin_notices() {
     $screen = get_current_screen();
     if ($screen->id !== 'tools_page_liteimage-settings') {
@@ -80,75 +116,19 @@ function liteimage_admin_notices() {
         echo '<div class="notice notice-info"><p>' . esc_html__('cwebp not found, using Intervention Image for WebP. Install cwebp for better performance.', 'liteimage') . '</p></div>';
     }
 }
+add_action('admin_notices', 'liteimage_admin_notices');
 
-// Image processing functions
-function compress_and_convert_image($file_path, $output_path, $quality = 85) {
-    liteimage_log("Processing image: $file_path");
-    $webp_path = str_replace(['.jpg', '.jpeg', '.png', '.webp'], '.webp', $output_path);
-    $is_webp = strtolower(pathinfo($file_path, PATHINFO_EXTENSION)) === 'webp';
-
-    // 1. Try Intervention Image
-    $intervention_success = false;
-    if (class_exists('Image')) {
-        try {
-            // Force GD driver if available, otherwise Imagick
-            if (function_exists('imagewebp')) {
-                Image::configure(['driver' => 'gd']);
-                liteimage_log("Using GD driver for Intervention Image");
-            } elseif (class_exists('Imagick')) {
-                Image::configure(['driver' => 'imagick']);
-                liteimage_log("Using Imagick driver for Intervention Image");
-            }
-
-            $image = Image::make($file_path)->strip();
-            if (!$is_webp) {
-                $image->save($output_path, $quality, 'jpg');
-                liteimage_log("Saved JPEG via Intervention: $output_path");
-            }
-            if (is_webp_supported() && !$is_webp) {
-                $image->encode('webp', $quality)->save($webp_path);
-                liteimage_log("Generated WebP via Intervention: $webp_path");
-            } elseif ($is_webp) {
-                $image->save($webp_path, $quality, 'webp');
-                liteimage_log("Saved WebP via Intervention: $webp_path");
-            }
-            $image->destroy();
-            $intervention_success = true;
-            liteimage_log("Intervention Image processed successfully");
-        } catch (Exception $e) {
-            liteimage_log("Intervention Image failed: " . $e->getMessage());
-        }
-    } else {
-        liteimage_log("Intervention Image not available");
-    }
-
-    // 2. Fallback to GD if Intervention failed or unavailable
-    if (!$intervention_success) {
-        $image = $is_webp ? imagecreatefromwebp($file_path) : imagecreatefromstring(file_get_contents($file_path));
-        if ($image) {
-            if (!$is_webp) {
-                imagejpeg($image, $output_path, $quality);
-                liteimage_log("Saved JPEG via GD: $output_path");
-            }
-            if (function_exists('imagewebp') && !$is_webp) {
-                imagewebp($image, $webp_path, $quality);
-                liteimage_log("Generated WebP via GD: $webp_path");
-            }
-            imagedestroy($image);
-            liteimage_log("Processed image with GD fallback");
-        } else {
-            liteimage_log("GD fallback failed to create image resource");
-        }
-    }
-
-    $webp_result = file_exists($webp_path) ? $webp_path : false;
-    liteimage_log("Image processed: compressed=$output_path, webp=" . ($webp_result ? $webp_path : 'none'));
-    return [
-        'compressed' => $is_webp ? $file_path : $output_path,
-        'webp' => $webp_result,
-    ];
-}
-
+/**
+ * Returns an associative array containing the size name, width, and height of a thumbnail based on specified dimensions.
+ *
+ * @param array|int $thumb Thumbnail size in format [width, height] or a single integer value for width.
+ *
+ * @return array {
+ *     'size_name' string The name of the image size.
+ *     'width'     int    The width of the image size.
+ *     'height'    int    The height of the image size.
+ * }
+ */
 function get_thumb_size($thumb) {
     $thumb_width = 1920;
     $thumb_height = 0;
@@ -164,12 +144,40 @@ function get_thumb_size($thumb) {
     return ['size_name' => $thumb_size, 'width' => $thumb_width, 'height' => $thumb_height];
 }
 
+/**
+ * Calculates the destination dimensions for an image based on a given width
+ * and height.
+ *
+ * If either the width or height is not specified, it will be calculated based on
+ * the aspect ratio of the original image.
+ *
+ * @param int $width The desired width of the image.
+ * @param int $height The desired height of the image.
+ * @param int $orig_width The original width of the image.
+ * @param int $orig_height The original height of the image.
+ *
+ * @return array An array containing the destination width and height.
+ */
 function calculate_dimensions($width, $height, $orig_width, $orig_height) {
     $dest_width = $width ?: (int)round(($height / $orig_height) * $orig_width);
     $dest_height = $height ?: (int)round(($width / $orig_width) * $orig_height);
     return [$dest_width, $dest_height];
 }
 
+/**
+ * Generates thumbnails for a given image attachment in specified sizes.
+ *
+ * This function generates thumbnails for the provided image attachment ID,
+ * using the specified sizes. It supports both JPEG and WebP formats, employing
+ * the Intervention Image library if available, or falling back to GD.
+ * Thumbnails are saved with WebP extension and metadata is updated accordingly.
+ *
+ * @param int $attachment_id The ID of the image attachment.
+ * @param string $file_path The path to the original image file.
+ * @param array $sizes An associative array of size keys and dimensions [width, height].
+ *
+ * @return string The name of the last generated thumbnail size.
+ */
 function generate_thumbnails_for_image($attachment_id, $file_path, $sizes) {
     liteimage_log("Generating thumbnails for attachment ID: $attachment_id");
     if (!file_exists($file_path)) {
@@ -264,29 +272,16 @@ function generate_thumbnails_for_image($attachment_id, $file_path, $sizes) {
     wp_update_attachment_metadata($attachment_id, $metadata);
     return $updated_size_name;
 }
-// Handle image upload
-add_filter('wp_handle_upload', 'liteimage_handle_upload');
-function liteimage_handle_upload($upload) {
-    $attachment_id = attachment_url_to_postid($upload['url']);
-    if ($attachment_id) {
-        $is_webp = strtolower(pathinfo($upload['file'], PATHINFO_EXTENSION)) === 'webp';
-        $output_path = $is_webp ? $upload['file'] : str_replace(['.jpg', '.jpeg', '.png'], '-opt.jpg', $upload['file']);
-        $result = compress_and_convert_image($upload['file'], $output_path);
-        if ($result) {
-            $upload['file'] = $result['compressed'];
-            $upload['url'] = str_replace(basename($upload['file']), basename($result['compressed']), $upload['url']);
-            $metadata = wp_get_attachment_metadata($attachment_id) ?: [];
-            if ($result['webp']) {
-                $metadata['webp'] = basename($result['webp']);
-            }
-            wp_update_attachment_metadata($attachment_id, $metadata);
-        }
-    }
-    return $upload;
-}
 
-// Regenerate thumbnails with cleanup
-function liteimage_regenerate_all_thumbnails() {
+/**
+ * Deletes all existing thumbnails for all image attachments.
+ *
+ * This function loops through all image attachments and deletes any existing
+ * thumbnails. It also clears the `sizes` metadata for each attachment.
+ *
+ * @since 2.1
+ */
+function liteimage_clear_all_thumbnails() {
     $images = get_posts(['post_type' => 'attachment', 'post_mime_type' => 'image', 'numberposts' => -1]);
     $upload_dir = wp_upload_dir();
     $base_dir = $upload_dir['basedir'];
@@ -308,24 +303,44 @@ function liteimage_regenerate_all_thumbnails() {
     }
 }
 
-add_action('admin_menu', 'liteimage_add_regenerate_thumbnails_menu');
-function liteimage_add_regenerate_thumbnails_menu() {
+
+/**
+ * Adds the LiteImage settings page to the Tools menu.
+ *
+ * This function registers a page for managing LiteImage settings under the Tools
+ * menu in the WordPress admin. The page is only accessible to users with the
+ * `manage_options` capability.
+ *
+ * @since 1.0.0
+ */
+function liteimage_add_settings_page_to_submenu() {
     add_submenu_page(
         'tools.php',
         __('LiteImage Settings', 'liteimage'),
         __('LiteImage Settings', 'liteimage'),
         'manage_options',
         'liteimage-settings',
-        'liteimage_regenerate_thumbnails_page'
+        'liteimage_thumbnails_page'
     );
 }
+add_action('admin_menu', 'liteimage_add_settings_page_to_submenu');
 
-function liteimage_regenerate_thumbnails_page() {
+/**
+ * Outputs the LiteImage settings page.
+ *
+ * This function handles the output of the LiteImage settings page, which is
+ * accessible under the Tools menu in the WordPress admin. The page provides a
+ * form for clearing all existing thumbnails, and a code block explaining the
+ * syntax and parameters of the `liteimage_picture` function.
+ *
+ * @since 1.0.0
+ */
+function liteimage_thumbnails_page() {
     if (!current_user_can('manage_options')) return;
 
-    if (isset($_POST['regenerate_thumbnails'])) {
-        check_admin_referer('regenerate_thumbnails_nonce');
-        liteimage_regenerate_all_thumbnails();
+    if (isset($_POST['liteimage_clear_thumbnails'])) {
+        check_admin_referer('liteimage_clear_thumbnails_nonce');
+        liteimage_clear_all_thumbnails();
         echo '<div class="updated"><p>' . esc_html__('Thumbnails cleared successfully! New sizes will be generated on next call to liteimage_picture.', 'liteimage') . '</p></div>';
     }
 
@@ -334,8 +349,8 @@ function liteimage_regenerate_thumbnails_page() {
         <h1><?php _e('LiteImage Settings', 'liteimage'); ?></h1>
         <p><?php _e('Clears all existing thumbnails. New thumbnails will be generated when liteimage_picture is called.', 'liteimage'); ?></p>
         <form method="post">
-            <?php wp_nonce_field('regenerate_thumbnails_nonce'); ?>
-            <p><input type="submit" name="regenerate_thumbnails" class="button button-primary" value="<?php _e('Clear Thumbnails', 'liteimage'); ?>"></p>
+            <?php wp_nonce_field('liteimage_clear_thumbnails_nonce'); ?>
+            <p><input type="submit" name="liteimage_clear_thumbnails" class="button button-primary" value="<?php _e('Clear Thumbnails', 'liteimage'); ?>"></p>
         </form>
         <h2><?php _e('Using the liteimage_picture Function', 'liteimage'); ?></h2>
         <p><?php _e('The <code>liteimage_picture</code> function outputs responsive images with WebP support, lazy loading, and accessibility attributes. Thumbnails are generated dynamically based on specified sizes.', 'liteimage'); ?></p>
@@ -353,14 +368,27 @@ function liteimage_regenerate_thumbnails_page() {
     <?php
 }
 
-// Display thumbnail sizes in media library
-add_filter('manage_media_columns', 'liteimage_add_thumbnail_sizes_column');
+/**
+ * Adds a new column to the media list table displaying the thumbnail sizes
+ * for each image attachment.
+ *
+ * @param array $columns The existing columns in the media list table.
+ * @return array The updated columns with the new thumbnail sizes column.
+ */
 function liteimage_add_thumbnail_sizes_column($columns) {
     $columns['thumbnail_sizes'] = __('Thumbnail Sizes', 'liteimage');
     return $columns;
 }
+add_filter('manage_media_columns', 'liteimage_add_thumbnail_sizes_column');
 
-add_action('manage_media_custom_column', 'liteimage_display_thumbnail_sizes_column', 10, 2);
+/**
+ * Outputs the thumbnail sizes for each image attachment in the media list table.
+ *
+ * @param string $column_name The name of the column being displayed.
+ * @param int $post_id The ID of the image attachment being displayed.
+ *
+ * @since 1.0.0
+ */
 function liteimage_display_thumbnail_sizes_column($column_name, $post_id) {
     if ($column_name === 'thumbnail_sizes') {
         $metadata = wp_get_attachment_metadata($post_id) ?: [];
@@ -377,8 +405,25 @@ function liteimage_display_thumbnail_sizes_column($column_name, $post_id) {
         }
     }
 }
+add_action('manage_media_custom_column', 'liteimage_display_thumbnail_sizes_column', 10, 2);
 
-// Main image output function
+
+/**
+ * Outputs a responsive picture element with WebP support, lazy loading, and accessibility attributes.
+ *
+ * This function generates responsive images for the specified image attachment ID, supporting
+ * different thumbnail sizes and WebP format. It considers specified minimum and maximum sizes for
+ * responsive design, and uses a mobile image ID if provided for smaller screen sizes.
+ *
+ * @param int $image_id The ID of the image attachment.
+ * @param array|string $thumb Default image size or array [width, height]. Defaults to [1920, 0].
+ * @param array $args Additional attributes for the <img> tag, e.g., ["class" => "my-image"].
+ * @param array $min Minimum sizes for responsive images, e.g., ["768" => [768, 0]].
+ * @param array $max Maximum sizes for responsive images, e.g., ["1024" => [1024, 0]].
+ * @param int|null $mobile_image_id An optional image ID for mobile screens.
+ *
+ * @return string The generated HTML for the picture element.
+ */
 function liteimage_picture($image_id, $thumb = [1920, 0], $args = [], $min = [], $max = [], $mobile_image_id = null) {
     $thumb_data = get_thumb_size($thumb);
     $sizes_to_generate = [$thumb_data['size_name'] => [$thumb_data['width'], $thumb_data['height']]];
