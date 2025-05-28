@@ -39,6 +39,19 @@ function liteimage_log($message) {
 }
 
 /**
+ * Adds a link to the LiteImage settings page on the Plugins page.
+ *
+ * @param string[] $links The list of links.
+ * @return string[] The list of links with the settings link added.
+ */
+function liteimage_add_settings_link($links) {
+    $settings_link = '<a href="' . admin_url('tools.php?page=liteimage-settings') . '">' . __('Settings', 'liteimage') . '</a>';
+    array_unshift($links, $settings_link);
+    return $links;
+}
+add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'liteimage_add_settings_link');
+
+/**
  * Checks if the cwebp command is available.
  *
  * The cwebp command is checked on all platforms except Windows, where it is
