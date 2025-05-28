@@ -227,10 +227,9 @@ function liteimage_generate_thumbnails_for_image($attachment_id, $file_path, $si
         list($dest_width, $dest_height) = liteimage_calculate_dimensions($width, $height, $orig_width, $orig_height);
         $size_name = "liteimage-{$dest_width}x{$dest_height}";
         $updated_size_name = $size_name;
+        $webp_path = str_replace(basename($file_path), basename($file_path, '.' . $original_extension) . "-$size_name" . '.webp', $file_path);
 
-        if (!isset($metadata['sizes'][$size_name])) {
-            $webp_path = str_replace(basename($file_path), basename($file_path, '.' . $original_extension) . "-$size_name" . '.webp', $file_path);
-
+        if (!isset($metadata['sizes'][$size_name]) || !file_exists($webp_path)) {
             $intervention_available = class_exists('Intervention\Image\ImageManagerStatic');
             liteimage_log("Intervention available: " . ($intervention_available ? 'yes' : 'no') . ", WebP supported: " . liteimage_is_webp_supported());
 

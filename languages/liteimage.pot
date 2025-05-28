@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-05-28T13:45:13+03:00\n"
+"POT-Creation-Date: 2025-05-28T13:53:42+03:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: liteimage\n"
@@ -42,68 +42,68 @@ msgstr ""
 msgid "cwebp not found, using Intervention Image for WebP. Install cwebp for better performance."
 msgstr ""
 
+#: liteimage.php:318
 #: liteimage.php:319
-#: liteimage.php:320
-#: liteimage.php:349
+#: liteimage.php:348
 msgid "LiteImage Settings"
 msgstr ""
 
-#: liteimage.php:344
+#: liteimage.php:343
 msgid "Thumbnails cleared successfully! New sizes will be generated on next call to liteimage."
 msgstr ""
 
-#: liteimage.php:350
+#: liteimage.php:349
 msgid "Clears all existing thumbnails. New thumbnails will be generated when liteimage is called."
 msgstr ""
 
-#: liteimage.php:353
+#: liteimage.php:352
 msgid "Clear Thumbnails"
 msgstr ""
 
-#: liteimage.php:355
+#: liteimage.php:354
 msgid "Using the liteimage Function"
 msgstr ""
 
-#: liteimage.php:356
+#: liteimage.php:355
 msgid "The <code>liteimage</code> function generates responsive images with WebP support if available (via cwebp or GD/Imagick). Falls back to JPEG if WebP is unsupported."
 msgstr ""
 
-#: liteimage.php:357
+#: liteimage.php:356
 msgid "Function Syntax"
 msgstr ""
 
-#: liteimage.php:359
+#: liteimage.php:358
 msgid "Parameters"
 msgstr ""
 
-#: liteimage.php:361
+#: liteimage.php:360
 msgid "The ID of the image attachment."
 msgstr ""
 
-#: liteimage.php:362
+#: liteimage.php:361
 msgid "Default image size (e.g., \"full\") or array [width, height] (e.g., [1280, 0]). Defaults to [1920, 0]."
 msgstr ""
 
-#: liteimage.php:363
+#: liteimage.php:362
 msgid "Additional attributes for the <img> tag, e.g., [\"class\" => \"my-image\", \"alt\" => \"Description\", \"fetchpriority\" => \"high\", \"aria-label\" => \"Label\", \"aria-describedby\" => \"Description ID\"]."
 msgstr ""
 
-#: liteimage.php:364
+#: liteimage.php:363
 msgid "Array of min-width media queries and sizes (e.g., [\"768\" => [1920, 0]])."
 msgstr ""
 
-#: liteimage.php:365
+#: liteimage.php:364
 msgid "Array of max-width media queries and sizes (e.g., [\"767\" => [768, 480]])."
 msgstr ""
 
-#: liteimage.php:366
+#: liteimage.php:365
 msgid "Optional image ID for mobile screens (used for min/max media queries with width < 768px)."
 msgstr ""
 
-#: liteimage.php:380
+#: liteimage.php:379
 msgid "Thumbnail Sizes"
 msgstr ""
 
-#: liteimage.php:405
+#: liteimage.php:404
 msgid "No thumbnails"
 msgstr ""
