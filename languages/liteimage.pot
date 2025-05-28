@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-05-28T13:27:52+03:00\n"
+"POT-Creation-Date: 2025-05-28T13:45:13+03:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: liteimage\n"
@@ -49,11 +49,11 @@ msgid "LiteImage Settings"
 msgstr ""
 
 #: liteimage.php:344
-msgid "Thumbnails cleared successfully! New sizes will be generated on next call to liteimage_picture."
+msgid "Thumbnails cleared successfully! New sizes will be generated on next call to liteimage."
 msgstr ""
 
 #: liteimage.php:350
-msgid "Clears all existing thumbnails. New thumbnails will be generated when liteimage_picture is called."
+msgid "Clears all existing thumbnails. New thumbnails will be generated when liteimage is called."
 msgstr ""
 
 #: liteimage.php:353
@@ -61,11 +61,11 @@ msgid "Clear Thumbnails"
 msgstr ""
 
 #: liteimage.php:355
-msgid "Using the liteimage_picture Function"
+msgid "Using the liteimage Function"
 msgstr ""
 
 #: liteimage.php:356
-msgid "The <code>liteimage_picture</code> function outputs responsive images with WebP support, lazy loading, and accessibility attributes. Thumbnails are generated dynamically based on specified sizes."
+msgid "The <code>liteimage</code> function generates responsive images with WebP support if available (via cwebp or GD/Imagick). Falls back to JPEG if WebP is unsupported."
 msgstr ""
 
 #: liteimage.php:357
@@ -77,15 +77,7 @@ msgid "Parameters"
 msgstr ""
 
 #: liteimage.php:361
-msgid "$image_id"
-msgstr ""
-
-#: liteimage.php:361
 msgid "The ID of the image attachment."
-msgstr ""
-
-#: liteimage.php:362
-msgid "$thumb"
 msgstr ""
 
 #: liteimage.php:362
@@ -93,15 +85,7 @@ msgid "Default image size (e.g., \"full\") or array [width, height] (e.g., [1280
 msgstr ""
 
 #: liteimage.php:363
-msgid "$args"
-msgstr ""
-
-#: liteimage.php:363
-msgid "Additional attributes for the <img> tag, e.g., [\"class\" => \"my-image\", \"alt\" => \"Description\"]."
-msgstr ""
-
-#: liteimage.php:364
-msgid "$min"
+msgid "Additional attributes for the <img> tag, e.g., [\"class\" => \"my-image\", \"alt\" => \"Description\", \"fetchpriority\" => \"high\", \"aria-label\" => \"Label\", \"aria-describedby\" => \"Description ID\"]."
 msgstr ""
 
 #: liteimage.php:364
@@ -109,17 +93,17 @@ msgid "Array of min-width media queries and sizes (e.g., [\"768\" => [1920, 0]])
 msgstr ""
 
 #: liteimage.php:365
-msgid "$max"
-msgstr ""
-
-#: liteimage.php:365
 msgid "Array of max-width media queries and sizes (e.g., [\"767\" => [768, 480]])."
 msgstr ""
 
-#: liteimage.php:379
+#: liteimage.php:366
+msgid "Optional image ID for mobile screens (used for min/max media queries with width < 768px)."
+msgstr ""
+
+#: liteimage.php:380
 msgid "Thumbnail Sizes"
 msgstr ""
 
-#: liteimage.php:404
+#: liteimage.php:405
 msgid "No thumbnails"
 msgstr ""

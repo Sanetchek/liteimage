@@ -46,7 +46,7 @@ function liteimage_log($message) {
  *
  * @return bool True if cwebp is available, false otherwise.
  */
-function is_cwebp_available() {
+function liteimage_is_cwebp_available() {
     static $is_available = null;
     if ($is_available === null) {
         if (strncasecmp(PHP_OS, 'WIN', 3) == 0) {
@@ -68,7 +68,7 @@ function is_cwebp_available() {
  *
  * @return bool True if WebP support is available, false otherwise.
  */
-function is_webp_supported() {
+function liteimage_is_webp_supported() {
     static $supported = null;
     if ($supported === null) {
         $supported = function_exists('imagewebp') || (class_exists('Imagick') && in_array('WEBP', Imagick::queryFormats()));
@@ -110,9 +110,9 @@ function liteimage_admin_notices() {
         return;
     }
 
-    if (!is_cwebp_available() && !is_webp_supported()) {
+    if (!liteimage_is_cwebp_available() && !liteimage_is_webp_supported()) {
         echo '<div class="notice notice-warning"><p>' . esc_html__('WebP conversion requires <strong>cwebp</strong> or WebP support in GD/Imagick. Using compressed JPEG.', 'liteimage') . '</p></div>';
-    } elseif (!is_cwebp_available()) {
+    } elseif (!liteimage_is_cwebp_available()) {
         echo '<div class="notice notice-info"><p>' . esc_html__('cwebp not found, using Intervention Image for WebP. Install cwebp for better performance.', 'liteimage') . '</p></div>';
     }
 }
@@ -129,7 +129,7 @@ add_action('admin_notices', 'liteimage_admin_notices');
  *     'height'    int    The height of the image size.
  * }
  */
-function get_thumb_size($thumb) {
+function liteimage_get_thumb_size($thumb) {
     $thumb_width = 1920;
     $thumb_height = 0;
     $thumb_size = 'full';
@@ -158,7 +158,7 @@ function get_thumb_size($thumb) {
  *
  * @return array An array containing the destination width and height.
  */
-function calculate_dimensions($width, $height, $orig_width, $orig_height) {
+function liteimage_calculate_dimensions($width, $height, $orig_width, $orig_height) {
     $dest_width = $width ?: (int)round(($height / $orig_height) * $orig_width);
     $dest_height = $height ?: (int)round(($width / $orig_width) * $orig_height);
     return [$dest_width, $dest_height];
@@ -178,7 +178,7 @@ function calculate_dimensions($width, $height, $orig_width, $orig_height) {
  *
  * @return string The name of the last generated thumbnail size.
  */
-function generate_thumbnails_for_image($attachment_id, $file_path, $sizes) {
+function liteimage_generate_thumbnails_for_image($attachment_id, $file_path, $sizes) {
     liteimage_log("Generating thumbnails for attachment ID: $attachment_id");
     if (!file_exists($file_path)) {
         liteimage_log("File not found: $file_path");
@@ -196,7 +196,7 @@ function generate_thumbnails_for_image($attachment_id, $file_path, $sizes) {
     }
 
     $image = null;
-    if (class_exists('Intervention\Image\ImageManagerStatic') && is_webp_supported()) {
+    if (class_exists('Intervention\Image\ImageManagerStatic') && liteimage_is_webp_supported()) {
         try {
             if (function_exists('imagewebp')) {
                 Image::configure(['driver' => 'gd']);
@@ -224,7 +224,7 @@ function generate_thumbnails_for_image($attachment_id, $file_path, $sizes) {
     $updated_size_name = '';
     foreach ($sizes as $size_key => $dimensions) {
         list($width, $height) = $dimensions;
-        list($dest_width, $dest_height) = calculate_dimensions($width, $height, $orig_width, $orig_height);
+        list($dest_width, $dest_height) = liteimage_calculate_dimensions($width, $height, $orig_width, $orig_height);
         $size_name = "liteimage-{$dest_width}x{$dest_height}";
         $updated_size_name = $size_name;
 
@@ -232,9 +232,9 @@ function generate_thumbnails_for_image($attachment_id, $file_path, $sizes) {
             $webp_path = str_replace(basename($file_path), basename($file_path, '.' . $original_extension) . "-$size_name" . '.webp', $file_path);
 
             $intervention_available = class_exists('Intervention\Image\ImageManagerStatic');
-            liteimage_log("Intervention available: " . ($intervention_available ? 'yes' : 'no') . ", WebP supported: " . is_webp_supported());
+            liteimage_log("Intervention available: " . ($intervention_available ? 'yes' : 'no') . ", WebP supported: " . liteimage_is_webp_supported());
 
-            if ($intervention_available && is_webp_supported() && $image instanceof \Intervention\Image\Image) {
+            if ($intervention_available && liteimage_is_webp_supported() && $image instanceof \Intervention\Image\Image) {
                 $resized = $image;
                 if ($dest_width || $dest_height) {
                     $resized = $image->resize($dest_width, $dest_height, function ($constraint) {
@@ -264,7 +264,7 @@ function generate_thumbnails_for_image($attachment_id, $file_path, $sizes) {
         }
     }
 
-    if (class_exists('Intervention\Image\ImageManagerStatic') && is_webp_supported() && $image instanceof \Intervention\Image\Image) {
+    if (class_exists('Intervention\Image\ImageManagerStatic') && liteimage_is_webp_supported() && $image instanceof \Intervention\Image\Image) {
         $image->destroy();
     } elseif ($image) {
         imagedestroy($image);
@@ -331,7 +331,7 @@ add_action('admin_menu', 'liteimage_add_settings_page_to_submenu');
  * This function handles the output of the LiteImage settings page, which is
  * accessible under the Tools menu in the WordPress admin. The page provides a
  * form for clearing all existing thumbnails, and a code block explaining the
- * syntax and parameters of the `liteimage_picture` function.
+ * syntax and parameters of the `liteimage` function.
  *
  * @since 1.0.0
  */
@@ -341,28 +341,29 @@ function liteimage_thumbnails_page() {
     if (isset($_POST['liteimage_clear_thumbnails'])) {
         check_admin_referer('liteimage_clear_thumbnails_nonce');
         liteimage_clear_all_thumbnails();
-        echo '<div class="updated"><p>' . esc_html__('Thumbnails cleared successfully! New sizes will be generated on next call to liteimage_picture.', 'liteimage') . '</p></div>';
+        echo '<div class="updated"><p>' . esc_html__('Thumbnails cleared successfully! New sizes will be generated on next call to liteimage.', 'liteimage') . '</p></div>';
     }
 
     ?>
     <div class="wrap">
         <h1><?php _e('LiteImage Settings', 'liteimage'); ?></h1>
-        <p><?php _e('Clears all existing thumbnails. New thumbnails will be generated when liteimage_picture is called.', 'liteimage'); ?></p>
+        <p><?php _e('Clears all existing thumbnails. New thumbnails will be generated when liteimage is called.', 'liteimage'); ?></p>
         <form method="post">
             <?php wp_nonce_field('liteimage_clear_thumbnails_nonce'); ?>
             <p><input type="submit" name="liteimage_clear_thumbnails" class="button button-primary" value="<?php _e('Clear Thumbnails', 'liteimage'); ?>"></p>
         </form>
-        <h2><?php _e('Using the liteimage_picture Function', 'liteimage'); ?></h2>
-        <p><?php _e('The <code>liteimage_picture</code> function outputs responsive images with WebP support, lazy loading, and accessibility attributes. Thumbnails are generated dynamically based on specified sizes.', 'liteimage'); ?></p>
+        <h2><?php _e('Using the liteimage Function', 'liteimage'); ?></h2>
+        <p><?php _e('The <code>liteimage</code> function generates responsive images with WebP support if available (via cwebp or GD/Imagick). Falls back to JPEG if WebP is unsupported.', 'liteimage'); ?></p>
         <h3><?php _e('Function Syntax', 'liteimage'); ?></h3>
-        <pre>liteimage_picture(int $image_id, string|array $thumb = [1920, 0], array $args = [], array $min = [], array $max = [])</pre>
+        <pre>liteimage(int $image_id, string|array $thumb = [1920, 0], array $args = [], array $min = [], array $max = [], int|null $mobile_image_id = null)</pre>
         <h3><?php _e('Parameters', 'liteimage'); ?></h3>
         <ul>
-            <li><strong><?php _e('$image_id', 'liteimage'); ?></strong>: <?php _e('The ID of the image attachment.', 'liteimage'); ?></li>
-            <li><strong><?php _e('$thumb', 'liteimage'); ?></strong>: <?php _e('Default image size (e.g., "full") or array [width, height] (e.g., [1280, 0]). Defaults to [1920, 0].', 'liteimage'); ?></li>
-            <li><strong><?php _e('$args', 'liteimage'); ?></strong>: <?php _e('Additional attributes for the <img> tag, e.g., ["class" => "my-image", "alt" => "Description"].', 'liteimage'); ?></li>
-            <li><strong><?php _e('$min', 'liteimage'); ?></strong>: <?php _e('Array of min-width media queries and sizes (e.g., ["768" => [1920, 0]]).', 'liteimage'); ?></li>
-            <li><strong><?php _e('$max', 'liteimage'); ?></strong>: <?php _e('Array of max-width media queries and sizes (e.g., ["767" => [768, 480]]).', 'liteimage'); ?></li>
+            <li><strong>$image_id</strong>: <?php _e('The ID of the image attachment.', 'liteimage'); ?></li>
+            <li><strong>$thumb</strong>: <?php _e('Default image size (e.g., "full") or array [width, height] (e.g., [1280, 0]). Defaults to [1920, 0].', 'liteimage'); ?></li>
+            <li><strong>$args</strong>: <?php _e('Additional attributes for the <img> tag, e.g., ["class" => "my-image", "alt" => "Description", "fetchpriority" => "high", "aria-label" => "Label", "aria-describedby" => "Description ID"].', 'liteimage'); ?></li>
+            <li><strong>$min</strong>: <?php _e('Array of min-width media queries and sizes (e.g., ["768" => [1920, 0]]).', 'liteimage'); ?></li>
+            <li><strong>$max</strong>: <?php _e('Array of max-width media queries and sizes (e.g., ["767" => [768, 480]]).', 'liteimage'); ?></li>
+            <li><strong>$mobile_image_id</strong>: <?php _e('Optional image ID for mobile screens (used for min/max media queries with width < 768px).', 'liteimage'); ?></li>
         </ul>
     </div>
     <?php
@@ -424,8 +425,8 @@ add_action('manage_media_custom_column', 'liteimage_display_thumbnail_sizes_colu
  *
  * @return string The generated HTML for the picture element.
  */
-function liteimage_picture($image_id, $thumb = [1920, 0], $args = [], $min = [], $max = [], $mobile_image_id = null) {
-    $thumb_data = get_thumb_size($thumb);
+function liteimage($image_id, $thumb = [1920, 0], $args = [], $min = [], $max = [], $mobile_image_id = null) {
+    $thumb_data = liteimage_get_thumb_size($thumb);
     $sizes_to_generate = [$thumb_data['size_name'] => [$thumb_data['width'], $thumb_data['height']]];
 
     $min_sizes = [];
@@ -443,7 +444,7 @@ function liteimage_picture($image_id, $thumb = [1920, 0], $args = [], $min = [],
         $sizes_to_generate = array_merge($sizes_to_generate, $min_sizes, $max_sizes);
     }
     $file_path = get_attached_file($image_id);
-    $generated_size = generate_thumbnails_for_image($image_id, $file_path, $sizes_to_generate);
+    $generated_size = liteimage_generate_thumbnails_for_image($image_id, $file_path, $sizes_to_generate);
     $thumb_size_name = $generated_size ?: $thumb_data['size_name'];
 
     if ($mobile_image_id && $mobile_image_id !== $image_id) {
@@ -457,7 +458,7 @@ function liteimage_picture($image_id, $thumb = [1920, 0], $args = [], $min = [],
         }
         if (!empty($mobile_sizes_to_generate)) {
             $mobile_file_path = get_attached_file($mobile_image_id);
-            generate_thumbnails_for_image($mobile_image_id, $mobile_file_path, $mobile_sizes_to_generate);
+            liteimage_generate_thumbnails_for_image($mobile_image_id, $mobile_file_path, $mobile_sizes_to_generate);
         }
     }
 
@@ -474,7 +475,7 @@ function liteimage_picture($image_id, $thumb = [1920, 0], $args = [], $min = [],
             $output_image_id = ($type === 'min' && intval($width) > 0 && intval($width) < 768 || $type === 'max' && intval($width) < 768) && $mobile_image_id ? $mobile_image_id : $image_id;
             $size_key = $type . '-' . $width;
             list($dim_width, $dim_height) = $dim;
-            list($dest_width, $dest_height) = calculate_dimensions($dim_width, $dim_height, $image[1], $image[2]);
+            list($dest_width, $dest_height) = liteimage_calculate_dimensions($dim_width, $dim_height, $image[1], $image[2]);
             $size_name = "liteimage-{$dest_width}x{$dest_height}";
 
             $source_image = wp_get_attachment_image_src($output_image_id, $size_name);
