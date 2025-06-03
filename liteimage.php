@@ -14,17 +14,26 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// Disable default WordPress thumbnails
-add_filter('intermediate_image_sizes_advanced', '__return_empty_array');
-
 // Load Composer autoloader
 require_once __DIR__ . '/vendor/autoload.php';
 use Intervention\Image\ImageManagerStatic as Image;
 
 // Constants
 define('LITEIMAGE_LOG_FILE', __DIR__ . '/liteimage-debug.log');
-define('LITEIMAGE_LOG_ACTIVE', false);
 
+// Load settings
+$liteimage_settings = get_option('liteimage_settings', [
+    'disable_thumbnails' => false,
+    'enable_logs' => false,
+]);
+
+// Apply thumbnail filter based on setting
+if ($liteimage_settings['disable_thumbnails']) {
+    add_filter('intermediate_image_sizes_advanced', '__return_empty_array');
+}
+
+// Define log constant based on setting
+define('LITEIMAGE_LOG_ACTIVE', $liteimage_settings['enable_logs']);
 
 /**
  * Logs a message to the LiteImage debug log file.
@@ -54,9 +63,6 @@ add_filter('plugin_action_links_' . plugin_basename(__FILE__), 'liteimage_add_se
 /**
  * Checks if the cwebp command is available.
  *
- * The cwebp command is checked on all platforms except Windows, where it is
- * not installed by default and requires manual installation.
- *
  * @return bool True if cwebp is available, false otherwise.
  */
 function liteimage_is_cwebp_available() {
@@ -77,8 +83,6 @@ function liteimage_is_cwebp_available() {
 /**
  * Checks if WebP image support is available.
  *
- * Checks for the presence of imagewebp() or Imagick::WEBP support.
- *
  * @return bool True if WebP support is available, false otherwise.
  */
 function liteimage_is_webp_supported() {
@@ -88,34 +92,20 @@ function liteimage_is_webp_supported() {
         liteimage_log("WebP support: " . ($supported ? 'Enabled' : 'Disabled'));
         liteimage_log("GD support: " . (function_exists('imagewebp') ? 'yes' : 'no'));
         liteimage_log("Imagick WebP: " . (class_exists('Imagick') && in_array('WEBP', Imagick::queryFormats()) ? 'yes' : 'no'));
-
     }
     return $supported;
 }
 
 /**
  * Loads the plugin textdomain for localization.
- *
- * @since 1.0.0
  */
 function liteimage_load_textdomain() {
     load_plugin_textdomain('liteimage', false, dirname(plugin_basename(__FILE__)) . '/languages');
 }
 add_action('plugins_loaded', 'liteimage_load_textdomain');
 
-
 /**
  * Displays admin notices on the LiteImage settings page.
- *
- * The notices provide information about the availability of cwebp and WebP support
- * in the system. If cwebp is not available and WebP support is not available in
- * GD/Imagick, a warning notice is displayed indicating that compressed JPEG will
- * be used. If cwebp is not available but WebP support is available in
- * GD/Imagick, an informational notice is displayed indicating that Intervention
- * Image will be used for WebP conversion and recommending installation of cwebp
- * for better performance.
- *
- * @since 1.0.0
  */
 function liteimage_admin_notices() {
     $screen = get_current_screen();
@@ -132,15 +122,10 @@ function liteimage_admin_notices() {
 add_action('admin_notices', 'liteimage_admin_notices');
 
 /**
- * Returns an associative array containing the size name, width, and height of a thumbnail based on specified dimensions.
+ * Returns an associative array containing the size name, width, and height of a thumbnail.
  *
  * @param array|int $thumb Thumbnail size in format [width, height] or a single integer value for width.
- *
- * @return array {
- *     'size_name' string The name of the image size.
- *     'width'     int    The width of the image size.
- *     'height'    int    The height of the image size.
- * }
+ * @return array
  */
 function liteimage_get_thumb_size($thumb) {
     $thumb_width = 1920;
@@ -158,18 +143,13 @@ function liteimage_get_thumb_size($thumb) {
 }
 
 /**
- * Calculates the destination dimensions for an image based on a given width
- * and height.
+ * Calculates the destination dimensions for an image.
  *
- * If either the width or height is not specified, it will be calculated based on
- * the aspect ratio of the original image.
- *
- * @param int $width The desired width of the image.
- * @param int $height The desired height of the image.
- * @param int $orig_width The original width of the image.
- * @param int $orig_height The original height of the image.
- *
- * @return array An array containing the destination width and height.
+ * @param int $width The desired width.
+ * @param int $height The desired height.
+ * @param int $orig_width The original width.
+ * @param int $orig_height The original height.
+ * @return array
  */
 function liteimage_calculate_dimensions($width, $height, $orig_width, $orig_height) {
     $dest_width = $width ?: (int)round(($height / $orig_height) * $orig_width);
@@ -178,17 +158,11 @@ function liteimage_calculate_dimensions($width, $height, $orig_width, $orig_heig
 }
 
 /**
- * Generates thumbnails for a given image attachment in specified sizes.
- *
- * This function generates thumbnails for the provided image attachment ID,
- * using the specified sizes. It supports both JPEG and WebP formats, employing
- * the Intervention Image library if available, or falling back to GD.
- * Thumbnails are saved with WebP extension and metadata is updated accordingly.
+ * Generates thumbnails for a given image attachment.
  *
  * @param int $attachment_id The ID of the image attachment.
  * @param string $file_path The path to the original image file.
  * @param array $sizes An associative array of size keys and dimensions [width, height].
- *
  * @return string The name of the last generated thumbnail size.
  */
 function liteimage_generate_thumbnails_for_image($attachment_id, $file_path, $sizes) {
@@ -271,7 +245,7 @@ function liteimage_generate_thumbnails_for_image($attachment_id, $file_path, $si
                 'webp' => basename($webp_path),
                 'width' => $dest_width,
                 'height' => $dest_height,
-                'extension' => 'webp', // Добавлено расширение
+                'extension' => 'webp',
             ];
         }
     }
@@ -287,11 +261,6 @@ function liteimage_generate_thumbnails_for_image($attachment_id, $file_path, $si
 
 /**
  * Deletes all existing thumbnails for all image attachments.
- *
- * This function loops through all image attachments and deletes any existing
- * thumbnails. It also clears the `sizes` metadata for each attachment.
- *
- * @since 2.1
  */
 function liteimage_clear_all_thumbnails() {
     $images = get_posts(['post_type' => 'attachment', 'post_mime_type' => 'image', 'numberposts' => -1]);
@@ -315,15 +284,8 @@ function liteimage_clear_all_thumbnails() {
     }
 }
 
-
 /**
  * Adds the LiteImage settings page to the Tools menu.
- *
- * This function registers a page for managing LiteImage settings under the Tools
- * menu in the WordPress admin. The page is only accessible to users with the
- * `manage_options` capability.
- *
- * @since 1.0.0
  */
 function liteimage_add_settings_page_to_submenu() {
     add_submenu_page(
@@ -338,17 +300,38 @@ function liteimage_add_settings_page_to_submenu() {
 add_action('admin_menu', 'liteimage_add_settings_page_to_submenu');
 
 /**
- * Outputs the LiteImage settings page.
+ * Registers plugin settings.
+ */
+function liteimage_register_settings() {
+    register_setting('liteimage_settings_group', 'liteimage_settings', [
+        'sanitize_callback' => 'liteimage_sanitize_settings',
+    ]);
+}
+add_action('admin_init', 'liteimage_register_settings');
+
+/**
+ * Sanitizes plugin settings.
  *
- * This function handles the output of the LiteImage settings page, which is
- * accessible under the Tools menu in the WordPress admin. The page provides a
- * form for clearing all existing thumbnails, and a code block explaining the
- * syntax and parameters of the `liteimage` function.
- *
- * @since 1.0.0
+ * @param array $input The input settings.
+ * @return array The sanitized settings.
+ */
+function liteimage_sanitize_settings($input) {
+    return [
+        'disable_thumbnails' => isset($input['disable_thumbnails']) ? (bool)$input['disable_thumbnails'] : false,
+        'enable_logs' => isset($input['enable_logs']) ? (bool)$input['enable_logs'] : false,
+    ];
+}
+
+/**
+ * Outputs the LiteImage settings page with tabs.
  */
 function liteimage_thumbnails_page() {
     if (!current_user_can('manage_options')) return;
+
+    $liteimage_settings = get_option('liteimage_settings', [
+        'disable_thumbnails' => false,
+        'enable_logs' => false,
+    ]);
 
     if (isset($_POST['liteimage_clear_thumbnails'])) {
         check_admin_referer('liteimage_clear_thumbnails_nonce');
@@ -356,37 +339,98 @@ function liteimage_thumbnails_page() {
         echo '<div class="updated"><p>' . esc_html__('Thumbnails cleared successfully! New sizes will be generated on next call to liteimage.', 'liteimage') . '</p></div>';
     }
 
+    $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'general';
     ?>
     <div class="wrap">
         <h1><?php _e('LiteImage Settings', 'liteimage'); ?></h1>
-        <p><?php _e('Clears all existing thumbnails. New thumbnails will be generated when liteimage is called.', 'liteimage'); ?></p>
-        <form method="post">
-            <?php wp_nonce_field('liteimage_clear_thumbnails_nonce'); ?>
-            <p><input type="submit" name="liteimage_clear_thumbnails" class="button button-primary" value="<?php _e('Clear Thumbnails', 'liteimage'); ?>"></p>
-        </form>
-        <h2><?php _e('Using the liteimage Function', 'liteimage'); ?></h2>
-        <p><?php _e('The <code>liteimage</code> function generates responsive images with WebP support if available (via cwebp or GD/Imagick). Falls back to JPEG if WebP is unsupported.', 'liteimage'); ?></p>
-        <h3><?php _e('Function Syntax', 'liteimage'); ?></h3>
-        <pre>liteimage(int $image_id, string|array $thumb = [1920, 0], array $args = [], array $min = [], array $max = [], int|null $mobile_image_id = null)</pre>
-        <h3><?php _e('Parameters', 'liteimage'); ?></h3>
-        <ul>
-            <li><strong>$image_id</strong>: <?php _e('The ID of the image attachment.', 'liteimage'); ?></li>
-            <li><strong>$thumb</strong>: <?php _e('Default image size (e.g., "full") or array [width, height] (e.g., [1280, 0]). Defaults to [1920, 0].', 'liteimage'); ?></li>
-            <li><strong>$args</strong>: <?php _e('Additional attributes for the <img> tag, e.g., ["class" => "my-image", "alt" => "Description", "fetchpriority" => "high", "aria-label" => "Label", "aria-describedby" => "Description ID"].', 'liteimage'); ?></li>
-            <li><strong>$min</strong>: <?php _e('Array of min-width media queries and sizes (e.g., ["768" => [1920, 0]]).', 'liteimage'); ?></li>
-            <li><strong>$max</strong>: <?php _e('Array of max-width media queries and sizes (e.g., ["767" => [768, 480]]).', 'liteimage'); ?></li>
-            <li><strong>$mobile_image_id</strong>: <?php _e('Optional image ID for mobile screens (used for min/max media queries with width < 768px).', 'liteimage'); ?></li>
-        </ul>
+        <h2 class="nav-tab-wrapper">
+            <a href="?page=liteimage-settings&tab=general" class="nav-tab <?php echo $active_tab === 'general' ? 'nav-tab-active' : ''; ?>"><?php _e('General', 'liteimage'); ?></a>
+            <a href="?page=liteimage-settings&tab=usage" class="nav-tab <?php echo $active_tab === 'usage' ? 'nav-tab-active' : ''; ?>"><?php _e('Usage Instructions', 'liteimage'); ?></a>
+        </h2>
+
+        <?php if ($active_tab === 'general') : ?>
+            <form method="post" action="options.php">
+                <?php
+                settings_fields('liteimage_settings_group');
+                do_settings_sections('liteimage-settings');
+                ?>
+                <table class="form-table">
+                    <tr>
+                        <th scope="row"><?php _e('Disable Thumbnails', 'liteimage'); ?></th>
+                        <td>
+                            <input type="checkbox" name="liteimage_settings[disable_thumbnails]" value="1" <?php checked($liteimage_settings['disable_thumbnails'], true); ?>>
+                            <label><?php _e('Disable default WordPress thumbnails', 'liteimage'); ?></label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php _e('Enable Logs', 'liteimage'); ?></th>
+                        <td>
+                            <input type="checkbox" name="liteimage_settings[enable_logs]" value="1" <?php checked($liteimage_settings['enable_logs'], true); ?>>
+                            <label><?php _e('Enable debug logging', 'liteimage'); ?></label>
+                        </td>
+                    </tr>
+                </table>
+                <?php submit_button(); ?>
+            </form>
+            <p><?php _e('Clears all existing thumbnails. New thumbnails will be generated when liteimage is called.', 'liteimage'); ?></p>
+            <form method="post">
+                <?php wp_nonce_field('liteimage_clear_thumbnails_nonce'); ?>
+                <p><input type="submit" name="liteimage_clear_thumbnails" class="button button-primary" value="<?php _e('Clear Thumbnails', 'liteimage'); ?>"></p>
+            </form>
+        <?php else : ?>
+            <h2><?php _e('Using the liteimage Function', 'liteimage'); ?></h2>
+            <p><?php _e('The <code>liteimage</code> function generates responsive images with WebP support if available (via cwebp or GD/Imagick). Falls back to JPEG if WebP is unsupported.', 'liteimage'); ?></p>
+            <h3><?php _e('Function Syntax', 'liteimage'); ?></h3>
+            <pre>liteimage(int $image_id, array $data = [], int|null $mobile_image_id = null)</pre>
+            <h3><?php _e('Parameters', 'liteimage'); ?></h3>
+            <ul>
+                <li><strong>$image_id</strong>: <?php _e('The ID of the image attachment.', 'liteimage'); ?></li>
+                <li><strong>$data</strong>: <?php _e('An array of configuration options:', 'liteimage'); ?>
+                    <ul>
+                        <li><code>thumb</code>: <?php _e('Default image size (e.g., "full") or array [width, height] (e.g., [1280, 0]). Defaults to [1920, 0].', 'liteimage'); ?></li>
+                        <li><code>args</code>: <?php _e('Additional attributes for the <img> tag (e.g., ["class" => "my-image", "alt" => "Text", "fetchpriority" => "high"]).', 'liteimage'); ?></li>
+                        <li><code>min</code>: <?php _e('Array of min-width media queries and sizes (e.g., ["768" => [1920, 0]]).', 'liteimage'); ?></li>
+                        <li><code>max</code>: <?php _e('Array of max-width media queries and sizes (e.g., ["767" => [768, 480]]).', 'liteimage'); ?></li>
+                    </ul>
+                </li>
+                <li><strong>$mobile_image_id</strong>: <?php _e('Optional image ID to use for smaller screen widths (typically < 768px).', 'liteimage'); ?></li>
+            </ul>
+            <h3><?php _e('Examples', 'liteimage'); ?></h3>
+            <pre><code>
+// Basic usage with default size
+echo liteimage(123);
+
+// Custom size with alt and class
+echo liteimage(123, [
+    'thumb' => [1280, 720],
+    'args' => ['alt' => 'My Image', 'class' => 'custom-class']
+]);
+
+// Responsive images for different screens
+echo liteimage(123, [
+    'thumb' => [1920, 0],
+    'min' => ['768' => [1920, 0]],
+    'max' => ['767' => [768, 480]],
+    'args' => ['alt' => 'Responsive image', 'fetchpriority' => 'high']
+]);
+
+// Responsive with mobile-specific image
+echo liteimage(123, [
+    'thumb' => [1920, 0],
+    'min' => ['768' => [1920, 0]],
+    'max' => ['767' => [768, 480]],
+], 456); // 456 is the mobile image ID
+            </code></pre>
+        <?php endif; ?>
     </div>
     <?php
 }
 
 /**
- * Adds a new column to the media list table displaying the thumbnail sizes
- * for each image attachment.
+ * Adds a new column to the media list table for thumbnail sizes.
  *
- * @param array $columns The existing columns in the media list table.
- * @return array The updated columns with the new thumbnail sizes column.
+ * @param array $columns The existing columns.
+ * @return array The updated columns.
  */
 function liteimage_add_thumbnail_sizes_column($columns) {
     $columns['thumbnail_sizes'] = __('Thumbnail Sizes', 'liteimage');
@@ -397,10 +441,8 @@ add_filter('manage_media_columns', 'liteimage_add_thumbnail_sizes_column');
 /**
  * Outputs the thumbnail sizes for each image attachment in the media list table.
  *
- * @param string $column_name The name of the column being displayed.
- * @param int $post_id The ID of the image attachment being displayed.
- *
- * @since 1.0.0
+ * @param string $column_name The name of the column.
+ * @param int $post_id The ID of the image attachment.
  */
 function liteimage_display_thumbnail_sizes_column($column_name, $post_id) {
     if ($column_name === 'thumbnail_sizes') {
@@ -420,24 +462,19 @@ function liteimage_display_thumbnail_sizes_column($column_name, $post_id) {
 }
 add_action('manage_media_custom_column', 'liteimage_display_thumbnail_sizes_column', 10, 2);
 
-
 /**
- * Outputs a responsive picture element with WebP support, lazy loading, and accessibility attributes.
- *
- * This function generates responsive images for the specified image attachment ID, supporting
- * different thumbnail sizes and WebP format. It considers specified minimum and maximum sizes for
- * responsive design, and uses a mobile image ID if provided for smaller screen sizes.
+ * Generates responsive image HTML with WebP support.
  *
  * @param int $image_id The ID of the image attachment.
- * @param array|string $thumb Default image size or array [width, height]. Defaults to [1920, 0].
- * @param array $args Additional attributes for the <img> tag, e.g., ["class" => "my-image"].
- * @param array $min Minimum sizes for responsive images, e.g., ["768" => [768, 0]].
- * @param array $max Maximum sizes for responsive images, e.g., ["1024" => [1024, 0]].
- * @param int|null $mobile_image_id An optional image ID for mobile screens.
- *
- * @return string The generated HTML for the picture element.
+ * @param array $data An associative array of options.
+ * @param int|null $mobile_image_id Optional ID for a mobile-specific image.
+ * @return string The HTML output for the responsive image.
  */
-function liteimage($image_id, $thumb = [1920, 0], $args = [], $min = [], $max = [], $mobile_image_id = null) {
+function liteimage($image_id, $data = [], $mobile_image_id = null) {
+    $thumb = $data['thumb'] ?? [1920, 0];
+    $args = $data['args'] ?? [];
+    $min = $data['min'] ?? [];
+    $max = $data['max'] ?? [];
     $thumb_data = liteimage_get_thumb_size($thumb);
     $sizes_to_generate = [$thumb_data['size_name'] => [$thumb_data['width'], $thumb_data['height']]];
 
