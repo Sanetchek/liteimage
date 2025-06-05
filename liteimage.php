@@ -167,8 +167,8 @@ function liteimage_calculate_dimensions($width, $height, $orig_width, $orig_heig
  */
 function liteimage_generate_thumbnails_for_image($attachment_id, $file_path, $sizes) {
     liteimage_log("Generating thumbnails for attachment ID: $attachment_id");
-    if (!file_exists($file_path)) {
-        liteimage_log("File not found: $file_path");
+    if (!file_exists($file_path) || !wp_get_attachment_image_src($attachment_id)) {
+        liteimage_log("Invalid file or attachment ID: $attachment_id");
         return '';
     }
 
@@ -228,10 +228,20 @@ function liteimage_generate_thumbnails_for_image($attachment_id, $file_path, $si
                         $constraint->upsize();
                     });
                 }
+
+                if (strtolower(pathinfo($file_path, PATHINFO_EXTENSION)) === 'png') {
+                    $resized->fill('transparent');
+                }
                 $resized->encode('webp', 85)->save($webp_path);
                 liteimage_log("Generated thumbnail: $size_name, webp=$webp_path");
             } else {
                 $resized = imagecreatetruecolor($dest_width, $dest_height);
+                if (strtolower(pathinfo($file_path, PATHINFO_EXTENSION)) === 'png') {
+                    imagealphablending($resized, false);
+                    imagesavealpha($resized, true);
+                    $transparent = imagecolorallocatealpha($resized, 0, 0, 0, 127);
+                    imagefill($resized, 0, 0, $transparent);
+                }
                 imagecopyresampled($resized, $image, 0, 0, 0, 0, $dest_width, $dest_height, $orig_width, $orig_height);
                 if (function_exists('imagewebp')) {
                     imagewebp($resized, $webp_path, 85);
@@ -396,17 +406,22 @@ function liteimage_thumbnails_page() {
                 <li><strong>$mobile_image_id</strong>: <?php _e('Optional image ID to use for smaller screen widths (typically < 768px).', 'liteimage'); ?></li>
             </ul>
             <h3><?php _e('Examples', 'liteimage'); ?></h3>
-            <pre><code>
-// Basic usage with default size
+            <?php show_usage_code(); ?>
+        <?php endif; ?>
+    </div>
+    <?php
+}
+
+function show_usage_code() {
+?>
+<pre><code>
+// Basic usage
 echo liteimage(123);
 
-// Custom size with alt and class
-echo liteimage(123, [
-    'thumb' => [1280, 720],
-    'args' => ['alt' => 'My Image', 'class' => 'custom-class']
-]);
+// Custom size
+echo liteimage(123, ['thumb' => [1280, 720], 'args' => ['alt' => 'My Image', 'class' => 'custom-class']]);
 
-// Responsive images for different screens
+// Responsive with media queries
 echo liteimage(123, [
     'thumb' => [1920, 0],
     'min' => ['768' => [1920, 0]],
@@ -414,16 +429,14 @@ echo liteimage(123, [
     'args' => ['alt' => 'Responsive image', 'fetchpriority' => 'high']
 ]);
 
-// Responsive with mobile-specific image
+// Mobile-specific image
 echo liteimage(123, [
     'thumb' => [1920, 0],
     'min' => ['768' => [1920, 0]],
     'max' => ['767' => [768, 480]],
-], 456); // 456 is the mobile image ID
-            </code></pre>
-        <?php endif; ?>
-    </div>
-    <?php
+], 456);
+</code></pre>
+<?php
 }
 
 /**
@@ -471,6 +484,11 @@ add_action('manage_media_custom_column', 'liteimage_display_thumbnail_sizes_colu
  * @return string The HTML output for the responsive image.
  */
 function liteimage($image_id, $data = [], $mobile_image_id = null) {
+    if (!wp_get_attachment_image_src($image_id) || !file_exists(get_attached_file($image_id))) {
+        liteimage_log("Invalid image ID or file missing: $image_id");
+        return '';
+    }
+
     $thumb = $data['thumb'] ?? [1920, 0];
     $args = $data['args'] ?? [];
     $min = $data['min'] ?? [];
@@ -584,4 +602,19 @@ function liteimage($image_id, $data = [], $mobile_image_id = null) {
     $output .= '</picture>';
 
     return $output;
+}
+
+// Fallback function for when plugin is disabled
+if (!function_exists('liteimage')) {
+    /**
+     * Fallback function for when plugin is disabled.
+     *
+     * @param int $image_id
+     * @param array $data
+     * @param int|null $mobile_image_id
+     * @return string
+     */
+    function liteimage($image_id, $data = [], $mobile_image_id = null) {
+        return apply_filters('liteimage_disabled_fallback', '', $image_id, $data, $mobile_image_id);
+    }
 }

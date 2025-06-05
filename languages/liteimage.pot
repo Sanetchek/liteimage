@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-06-03T19:49:38+03:00\n"
+"POT-Creation-Date: 2025-06-05T21:21:37+03:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: liteimage\n"
@@ -46,100 +46,100 @@ msgstr ""
 msgid "cwebp not found, using Intervention Image for WebP. Install cwebp for better performance."
 msgstr ""
 
-#: liteimage.php:293
-#: liteimage.php:294
-#: liteimage.php:345
+#: liteimage.php:297
+#: liteimage.php:298
+#: liteimage.php:349
 msgid "LiteImage Settings"
 msgstr ""
 
-#: liteimage.php:339
+#: liteimage.php:343
 msgid "Thumbnails cleared successfully! New sizes will be generated on next call to liteimage."
 msgstr ""
 
-#: liteimage.php:347
+#: liteimage.php:351
 msgid "General"
 msgstr ""
 
-#: liteimage.php:348
+#: liteimage.php:352
 msgid "Usage Instructions"
 msgstr ""
 
-#: liteimage.php:359
+#: liteimage.php:363
 msgid "Disable Thumbnails"
 msgstr ""
 
-#: liteimage.php:362
+#: liteimage.php:366
 msgid "Disable default WordPress thumbnails"
 msgstr ""
 
-#: liteimage.php:366
+#: liteimage.php:370
 msgid "Enable Logs"
 msgstr ""
 
-#: liteimage.php:369
+#: liteimage.php:373
 msgid "Enable debug logging"
 msgstr ""
 
-#: liteimage.php:375
+#: liteimage.php:379
 msgid "Clears all existing thumbnails. New thumbnails will be generated when liteimage is called."
 msgstr ""
 
-#: liteimage.php:378
+#: liteimage.php:382
 msgid "Clear Thumbnails"
 msgstr ""
 
-#: liteimage.php:381
+#: liteimage.php:385
 msgid "Using the liteimage Function"
 msgstr ""
 
-#: liteimage.php:382
+#: liteimage.php:386
 msgid "The <code>liteimage</code> function generates responsive images with WebP support if available (via cwebp or GD/Imagick). Falls back to JPEG if WebP is unsupported."
 msgstr ""
 
-#: liteimage.php:383
+#: liteimage.php:387
 msgid "Function Syntax"
 msgstr ""
 
-#: liteimage.php:385
+#: liteimage.php:389
 msgid "Parameters"
 msgstr ""
 
-#: liteimage.php:387
+#: liteimage.php:391
 msgid "The ID of the image attachment."
 msgstr ""
 
-#: liteimage.php:388
+#: liteimage.php:392
 msgid "An array of configuration options:"
 msgstr ""
 
-#: liteimage.php:390
+#: liteimage.php:394
 msgid "Default image size (e.g., \"full\") or array [width, height] (e.g., [1280, 0]). Defaults to [1920, 0]."
 msgstr ""
 
-#: liteimage.php:391
+#: liteimage.php:395
 msgid "Additional attributes for the <img> tag (e.g., [\"class\" => \"my-image\", \"alt\" => \"Text\", \"fetchpriority\" => \"high\"])."
 msgstr ""
 
-#: liteimage.php:392
+#: liteimage.php:396
 msgid "Array of min-width media queries and sizes (e.g., [\"768\" => [1920, 0]])."
 msgstr ""
 
-#: liteimage.php:393
+#: liteimage.php:397
 msgid "Array of max-width media queries and sizes (e.g., [\"767\" => [768, 480]])."
 msgstr ""
 
-#: liteimage.php:396
+#: liteimage.php:400
 msgid "Optional image ID to use for smaller screen widths (typically < 768px)."
 msgstr ""
 
-#: liteimage.php:398
+#: liteimage.php:402
 msgid "Examples"
 msgstr ""
 
-#: liteimage.php:436
+#: liteimage.php:443
 msgid "Thumbnail Sizes"
 msgstr ""
 
-#: liteimage.php:459
+#: liteimage.php:466
 msgid "No thumbnails"
 msgstr ""
