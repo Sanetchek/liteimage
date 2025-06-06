@@ -1,0 +1,16 @@
+{
+  "name": "sanetchek/liteimage",
+  "type": "wordpress-plugin",
+  "version": "1.0.0",
+  "description": "Image optimization plugin for WordPress using Intervention Image.",
+  "license": "GPL-2.0-or-later",
+  "require": {
+    "php": ">=5.6",
+    "intervention/image": "^2.7"
+  },
+  "autoload": {
+    "psr-4": {
+      "LiteImage\\": "src/"
+    }
+  }
+}
