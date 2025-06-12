@@ -28,7 +28,8 @@
     "prod": [
       "composer make-pot",
       "@clean-prod",
-      "composer install --no-dev --optimize-autoloader"
+      "composer install --no-dev --optimize-autoloader",
+      "rm -rf logs"
     ]
   },
   "autoload": {
