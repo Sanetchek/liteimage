@@ -21,7 +21,7 @@ use Intervention\Image\ImageManagerStatic as Image;
 
 // Constants
 define('LITEIMAGE_LOG_FILE', __DIR__ . '/liteimage-debug.log');
-define('LITEIMAGE_LOG_ACTIVE', true);
+define('LITEIMAGE_LOG_ACTIVE', false);
 
 // Initialize settings
 class LiteImage_Settings {
