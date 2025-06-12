@@ -21,7 +21,7 @@ use Intervention\Image\ImageManagerStatic as Image;
 
 // Constants
 define('LITEIMAGE_LOG_FILE', __DIR__ . '/liteimage-debug.log');
-define('LITEIMAGE_LOG_ACTIVE', true);
+define('LITEIMAGE_LOG_ACTIVE', false);
 
 // Initialize settings
 class LiteImage_Settings {
@@ -570,9 +570,15 @@ function liteimage($image_id, $data = [], $mobile_image_id = null) {
         return '';
     }
 
-    $default_type = ($metadata['extension'] ?? $original_extension) === 'webp' ? 'image/webp' : "image/$original_extension";
+    $default_type = "image/$original_extension";
 
-    $output = '<picture role="img">';
+    // Determine if image is decorative
+    $is_decorative = !empty($args['decorative']) && $args['decorative'] === true;
+
+    // Set picture attributes for accessibility
+    $picture_attrs = $is_decorative ? ' aria-hidden="true"' : '';
+
+    $output = '<picture role="img"' . $picture_attrs . '>';
     foreach (['min' => $min, 'max' => $max] as $type => $sizes) {
         foreach ($sizes as $width => $dim) {
             $output_image_id = ($type === 'min' && $width > 0 && $width < 768 || $type === 'max' && $width < 768) && $mobile_image_id ? $mobile_image_id : $image_id;
@@ -584,7 +590,7 @@ function liteimage($image_id, $data = [], $mobile_image_id = null) {
             if ($source_image) {
                 $size_metadata = $metadata['sizes'][$size_name] ?? [];
                 $extension = $size_metadata['extension'] ?? $original_extension;
-                $type_attr = $extension === 'webp' ? 'image/webp' : "image/$extension";
+                $type_attr = "image/$extension";
 
                 if ($size_metadata['webp']) {
                     $webp_url = str_replace(basename($source_image[0]), $size_metadata['webp'], $source_image[0]);
@@ -596,9 +602,9 @@ function liteimage($image_id, $data = [], $mobile_image_id = null) {
         }
     }
 
-    // Use wp_get_attachment_image for the fallback <img> tag
+    // Prepare img attributes
     $img_args = array_merge([
-        'alt' => !empty($args['alt']) ? $args['alt'] : ($args['decorative'] ?? false ? '' : get_the_title($image_id)),
+        'alt' => $is_decorative ? '' : (!empty($args['alt']) ? $args['alt'] : get_the_title($image_id)),
         'loading' => 'lazy',
         'decoding' => 'async',
     ], $args);
@@ -607,20 +613,20 @@ function liteimage($image_id, $data = [], $mobile_image_id = null) {
         list($img_args['width'], $img_args['height']) = liteimage_downsize($image_id, $thumb);
     }
 
-    // Add filter to remove srcset and sizes attributes
-    add_filter('wp_get_attachment_image_attributes', function ($attr, $attachment, $size) {
+    // Define named filter function
+    $remove_srcset_sizes = function ($attr, $attachment, $size) {
         unset($attr['srcset'], $attr['sizes']);
         return $attr;
-    }, 999, 3);
+    };
+
+    // Add filter to remove srcset and sizes
+    add_filter('wp_get_attachment_image_attributes', $remove_srcset_sizes, 999, 3);
 
     $output .= wp_get_attachment_image($image_id, $thumb_size_name, false, $img_args);
     $output .= '</picture>';
 
-    // Remove the filter immediately after to prevent affecting other calls
-    remove_filter('wp_get_attachment_image_attributes', function ($attr, $attachment, $size) {
-        unset($attr['srcset'], $attr['sizes']);
-        return $attr;
-    }, 999);
+    // Remove filter
+    remove_filter('wp_get_attachment_image_attributes', $remove_srcset_sizes, 999);
 
     return $output;
 }
