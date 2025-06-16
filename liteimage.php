@@ -139,6 +139,7 @@ class LiteImage_Thumbnail_Generator {
 
         $image = self::load_image($file_path, $original_extension);
         if (!$image) {
+            LiteImage_Logger::log("Failed to load image: $file_path");
             return '';
         }
 
@@ -176,24 +177,39 @@ class LiteImage_Thumbnail_Generator {
                 return $image;
             } catch (Exception $e) {
                 LiteImage_Logger::log("Intervention Image failed: " . $e->getMessage());
+                return null;
             }
         }
 
-        $image = $extension === 'webp' ? imagecreatefromwebp($file_path) : imagecreatefromstring(file_get_contents($file_path));
-        if ($image) {
-            LiteImage_Logger::log("Image loaded via GD: $file_path");
+        $image = false;
+        if ($extension === 'webp' && function_exists('imagecreatefromwebp')) {
+            $image = imagecreatefromwebp($file_path);
         } else {
-            LiteImage_Logger::log("Failed to load image with GD: $file_path");
+            $image = imagecreatefromstring(file_get_contents($file_path));
         }
+
+        if ($image === false) {
+            LiteImage_Logger::log("Failed to load image with GD: $file_path");
+            return null;
+        }
+
+        LiteImage_Logger::log("Image loaded via GD: $file_path");
         return $image;
     }
 
     private static function generate_thumbnail($image, $file_path, $size_name, $dest_width, $dest_height, $webp_path, $original_extension) {
+        if (!$image) {
+            LiteImage_Logger::log("Invalid image resource for $file_path");
+            return;
+        }
+
+        list($orig_width, $orig_height) = getimagesize($file_path);
+        LiteImage_Logger::log("Original dimensions: {$orig_width}x{$orig_height}, Target: {$dest_width}x{$dest_height}");
+
         if (class_exists('Intervention\Image\ImageManagerStatic') && LiteImage_WebP_Support::is_webp_supported() && $image instanceof \Intervention\Image\Image) {
-            $resized = $dest_width || $dest_height ? $image->resize($dest_width, $dest_height, function ($constraint) {
-                $constraint->aspectRatio();
-                $constraint->upsize();
-            }) : $image;
+            // Force square crop to exact target dimensions from center
+            $resized = $image->fit($dest_width, $dest_height, null, 'center');
+            LiteImage_Logger::log("Center cropped image to {$dest_width}x{$dest_height}");
 
             if ($original_extension === 'png') {
                 $resized->fill('transparent');
@@ -208,11 +224,24 @@ class LiteImage_Thumbnail_Generator {
                 $transparent = imagecolorallocatealpha($resized, 0, 0, 0, 127);
                 imagefill($resized, 0, 0, $transparent);
             }
-            list($orig_width, $orig_height) = getimagesize($file_path);
-            imagecopyresampled($resized, $image, 0, 0, 0, 0, $dest_width, $dest_height, $orig_width, $orig_height);
-            if (function_exists('imagewebp')) {
-                imagewebp($resized, $webp_path, 85);
-                LiteImage_Logger::log("Generated WebP via GD: $webp_path");
+
+            // Calculate square crop
+            $crop_size = min($orig_width, $orig_height); // Use smallest dimension for square
+            $src_x = ($orig_width - $crop_size) / 2; // Center horizontally
+            $src_y = ($orig_height - $crop_size) / 2; // Center vertically
+            $src_x = max(0, (int) $src_x);
+            $src_y = max(0, (int) $src_y);
+            $src_w = $crop_size;
+            $src_h = $crop_size;
+            LiteImage_Logger::log("GD cropping: src_x={$src_x}, src_y={$src_y}, src_w={$src_w}, src_h={$src_h}");
+
+            if (imagecopyresampled($resized, $image, 0, 0, $src_x, $src_y, $dest_width, $dest_height, $src_w, $src_h)) {
+                if (function_exists('imagewebp')) {
+                    imagewebp($resized, $webp_path, 85);
+                    LiteImage_Logger::log("Generated WebP via GD: $webp_path");
+                }
+            } else {
+                LiteImage_Logger::log("GD imagecopyresampled failed for $file_path");
             }
             imagedestroy($resized);
         }
@@ -670,6 +699,10 @@ function liteimage_downsize($id, $size = 'medium') {
     $meta = wp_get_attachment_metadata($id);
     $width = $meta['width'] ?? 0;
     $height = $meta['height'] ?? 0;
+
+    if (is_array($size) && count($size) === 2) {
+        return [$size[0], $size[1]];
+    }
 
     if ($intermediate = image_get_intermediate_size($id, $size)) {
         $width = $intermediate['width'];
