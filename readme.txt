@@ -1,10 +1,10 @@
 === LiteImage ===
-Contributors: sanetchek
-Tags: image optimization, responsive images, webp, thumbnails, accessibility
-Requires at least: 5.0
-Tested up to: 6.8
-Stable tag: 3.1
+Contributors: algryshko
+Tags: images, optimization, thumbnails, webp
+Requires at least: 4.6
 Requires PHP: 7.4
+Tested up to: 6.8
+Stable tag: 3.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,16 +58,16 @@ echo liteimage(123);
 
 // With custom size and attributes
 echo liteimage(123, [
-    'thumb' => [1280, 720],
-    'args' => ['alt' => 'Alt text', 'class' => 'img-responsive']
+  'thumb' => [1280, 720],
+  'args' => ['alt' => 'Alt text', 'class' => 'img-responsive']
 ]);
 
 // Responsive with mobile fallback
 echo liteimage(123, [
-    'thumb' => [1920, 0],
-    'min' => ['768' => [1920, 0]],
-    'max' => ['767' => [768, 480]],
-    'args' => ['alt' => 'Responsive', 'fetchpriority' => 'high']
+  'thumb' => [1920, 0],
+  'min' => ['768' => [1920, 0]],
+  'max' => ['767' => [768, 480]],
+  'args' => ['alt' => 'Responsive', 'fetchpriority' => 'high']
 ], 456);
 ```
 
@@ -101,6 +101,8 @@ Logs are saved to `liteimage-debug.log` in the plugin folder when logging is ena
 3. Media Library showing dynamic sizes.
 
 == Changelog ==
+= 3.2 =
+* Added advanced resize and crop features for enhanced image customization.
 
 = 3.1 =
 - Refactored to OOP (class-based architecture).
