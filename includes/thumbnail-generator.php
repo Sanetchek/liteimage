@@ -48,7 +48,7 @@ class LiteImage_Thumbnail_Generator {
             if (!isset($metadata['sizes'][$size_name]) || !file_exists($webp_path)) {
                 self::generate_thumbnail($image, $file_path, $size_name, $dest_width, $dest_height, $webp_path, $original_extension, $width && $height);
                 $metadata['sizes'][$size_name] = [
-                    'file' => $original_extension === 'webp' ? false : basename($webp_path),
+                    'file' => basename($webp_path),
                     'webp' => basename($webp_path),
                     'width' => $dest_width,
                     'height' => $dest_height,
