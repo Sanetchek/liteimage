@@ -106,28 +106,61 @@ function liteimage($image_id, $data = [], $mobile_image_id = null) {
         return '';
     }
 
-    $default_type = ($metadata['extension'] ?? $original_extension) === 'webp' ? 'image/webp' : "image/$original_extension";
-
     $output = '<picture role="img">';
-    foreach (['min' => $min, 'max' => $max] as $type => $data) {
-        foreach ($data as $width => $dim) {
-            $output_image_id = ($type === 'min' && $width > 0 && $width < 768 || $type === 'max' && $width < 768) && $mobile_image_id ? $mobile_image_id : $image_id;
+
+    $sets = [
+        'min' => $min, // Mobile-First: There will be RSORT
+        'max' => $max, // Desktop-First: There will be Sort
+    ];
+
+    foreach ($sets as $type => $data) {
+        if (empty($data) || !is_array($data)) {
+            continue;
+        }
+
+        // We sort the width in the correct order
+        $widths = array_map('intval', array_keys($data));
+        if ($type === 'min') {
+            rsort($widths, SORT_NUMERIC); // 1440,1200,992,768...
+        } else {
+            sort($widths, SORT_NUMERIC);  // 480,767,991,1199...
+        }
+
+        foreach ($widths as $width) {
+            $dim = $data[$width];
+
+            // Явные скобки, чтобы приоритет операторов не стрелял в ногу
+            $use_mobile = ($mobile_image_id && $width < 768);
+            $output_image_id = $use_mobile ? $mobile_image_id : $image_id;
+
             $size_key = $type . '-' . $width;
+
             list($dest_width, $dest_height) = liteimage_downsize($output_image_id, $dim);
             $size_name = "liteimage-{$dest_width}x{$dest_height}";
             $source_image = wp_get_attachment_image_src($output_image_id, $size_name);
 
-            if ($source_image) {
-                $size_metadata = $metadata['sizes'][$size_name] ?? [];
-                $extension = $size_metadata['extension'] ?? $original_extension;
-                $type_attr = $extension === 'webp' ? 'image/webp' : "image/$extension";
+            if (!$source_image) {
+                continue;
+            }
 
-                if ($size_metadata['webp']) {
-                    $webp_url = str_replace(basename($source_image[0]), $size_metadata['webp'], $source_image[0]);
-                    $output .= '<source media="(' . ($type === 'min' ? 'min' : 'max') . '-width:' . esc_attr($width) . 'px)" srcset="' . esc_url($webp_url) . '" type="image/webp">';
-                } else {
-                    $output .= '<source media="(' . ($type === 'min' ? 'min' : 'max') . '-width:' . esc_attr($width) . 'px)" srcset="' . esc_url($source_image[0]) . '" type="' . esc_attr($type_attr) . '">';
-                }
+            // Метаданные размера (аккуратно читаем)
+            $size_metadata = isset($metadata['sizes'][$size_name]) && is_array($metadata['sizes'][$size_name])
+                ? $metadata['sizes'][$size_name]
+                : [];
+
+            $extension = isset($size_metadata['extension']) ? $size_metadata['extension'] : $original_extension;
+            $type_attr = ($extension === 'webp') ? 'image/webp' : "image/{$extension}";
+
+            // Формируем media-условие
+            $media = '(' . ($type === 'min' ? 'min' : 'max') . '-width: ' . esc_attr($width) . 'px)';
+
+            // Если генератор сделал webp-имя файла — подменяем url
+            if (!empty($size_metadata['webp'])) {
+                $webp_filename = $size_metadata['webp'];
+                $webp_url = str_replace(basename($source_image[0]), $webp_filename, $source_image[0]);
+                $output .= '<source media="' . $media . '" srcset="' . esc_url($webp_url) . '" type="image/webp">';
+            } else {
+                $output .= '<source media="' . $media . '" srcset="' . esc_url($source_image[0]) . '" type="' . esc_attr($type_attr) . '">';
             }
         }
     }
