@@ -124,9 +124,9 @@ function liteimage($image_id, $data = [], $mobile_image_id = null) {
 
                 if ($size_metadata['webp']) {
                     $webp_url = str_replace(basename($source_image[0]), $size_metadata['webp'], $source_image[0]);
-                    $output .= '<source media="(' . ($type === 'min' ? 'min' : 'max') . '-width:' . esc_attr($width) . 'px)" src="' . esc_url($webp_url) . '" type="image/webp">';
+                    $output .= '<source media="(' . ($type === 'min' ? 'min' : 'max') . '-width:' . esc_attr($width) . 'px)" srcset="' . esc_url($webp_url) . '" type="image/webp">';
                 } else {
-                    $output .= '<source media="(' . ($type === 'min' ? 'min' : 'max') . '-width:' . esc_attr($width) . 'px)" src="' . esc_url($source_image[0]) . '" type="' . esc_attr($type_attr) . '">';
+                    $output .= '<source media="(' . ($type === 'min' ? 'min' : 'max') . '-width:' . esc_attr($width) . 'px)" srcset="' . esc_url($source_image[0]) . '" type="' . esc_attr($type_attr) . '">';
                 }
             }
         }
