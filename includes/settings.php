@@ -23,6 +23,6 @@ class LiteImage_Settings {
     }
 
     public function get($key) {
-        return $this->settings[$key] ?? null;
+        return $this->settings[$key] ? $this->settings[$key] : null;
     }
 }

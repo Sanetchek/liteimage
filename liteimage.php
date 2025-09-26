@@ -44,136 +44,218 @@ require_once LITEIMAGE_DIR . 'includes/admin-page.php';
 require_once LITEIMAGE_DIR . 'includes/thumbnail-cleaner.php';
 
 // Core image rendering
-function liteimage($image_id, $data = [], $mobile_image_id = null) {
+function liteimage($image_id, $data = [], $mobile_image_id = null)
+{
     if (!$image_id) {
         LiteImage_Logger::log("Invalid image ID: $image_id");
         return '';
     }
 
-    $file_path = get_attached_file($image_id);
-    $extension = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
-    if (in_array($extension, ['svg', 'avif'])) {
-        $args = $data['args'] ?? [];
-        $img_args = array_merge([
-            'alt' => !empty($args['alt']) ? $args['alt'] : ($args['decorative'] ?? false ? '' : get_the_title($image_id)),
-            'loading' => 'lazy',
-            'decoding' => 'async'
-        ], $args);
+    // ---- Helpers ----
+    $arr_get = function ($arr, $key, $default = null) {
+        return (is_array($arr) && array_key_exists($key, $arr)) ? $arr[$key] : $default;
+    };
 
-        LiteImage_Logger::log("Skipping processing for $extension: $file_path");
-        return wp_get_attachment_image($image_id, ($data['thumb'] ?? 'full'), false, $img_args);
-    }
+    $normalize_ext = function ($ext) {
+        $ext = strtolower((string) $ext);
+        if ($ext === 'jpg')
+            $ext = 'jpeg';
+        return $ext;
+    };
 
-    $thumb = $data['thumb'] ?? [1920, 0];
-    $args = $data['args'] ?? [];
-    $min = $data['min'] ?? [];
-    $max = $data['max'] ?? [];
-
-    $thumb_data = LiteImage_Thumbnail_Generator::get_thumb_size($thumb, $image_id);
-    $sizes_to_generate = [$thumb_data['size_name'] => [$thumb_data['width'], $thumb_data['height']]];
-
-    foreach (['min' => $min, 'max' => $max] as $type => $sizes) {
-        foreach ($sizes as $width => $dim) {
-            $output_image_id = ($type === 'min' && $width > 0 && $width < 768 || $type === 'max' && $width < 768) && $mobile_image_id ? $mobile_image_id : $image_id;
-            if ($output_image_id === $image_id) {
-                $sizes_to_generate[$type . '-' . $width] = $dim;
-            }
+    $build_alt = function ($args, $fallback_title) {
+        // Explicit alt wins
+        if (!empty($args['alt'])) {
+            return $args['alt'];
         }
-    }
-
-    $generated_size = LiteImage_Thumbnail_Generator::generate_thumbnails($image_id, $file_path, $sizes_to_generate);
-    $metadata = wp_get_attachment_metadata($image_id);
-    $original_extension = $extension;
-
-    $thumb_size_name = $thumb_data['size_name'];
-
-    if ($mobile_image_id && $mobile_image_id !== $image_id) {
-        $mobile_sizes = [];
-        foreach (['min' => $min, 'max' => $max] as $type => $sizes) {
-            foreach ($sizes as $width => $dim) {
-                if (($type === 'min' && $width > 0 && $width < 768) || ($type === 'max' && $width < 768)) {
-                    $mobile_sizes[$type . '-' . $width] = $dim;
-                }
-            }
+        // Decorative image: empty alt
+        if (!empty($args['decorative'])) {
+            return '';
         }
-        if ($mobile_sizes) {
-            LiteImage_Thumbnail_Generator::generate_thumbnails($mobile_image_id, get_attached_file($mobile_image_id), $mobile_sizes);
-        }
-    }
+        // Fallback: attachment title
+        return $fallback_title;
+    };
 
-    $image = wp_get_attachment_image($image_id, $thumb_size_name);
-    if (!$image) {
+    // ---- Basic paths / extensions ----
+    $file_path_desktop = get_attached_file($image_id);
+    if (!$file_path_desktop) {
+        LiteImage_Logger::log("Missing file path for image ID: $image_id");
         return '';
     }
+    $orig_ext_desktop = strtolower(pathinfo($file_path_desktop, PATHINFO_EXTENSION));
 
-    $output = '<picture role="img">';
+    $file_path_mobile = ($mobile_image_id && $mobile_image_id !== $image_id) ? get_attached_file($mobile_image_id) : null;
+    $orig_ext_mobile = $file_path_mobile ? strtolower(pathinfo($file_path_mobile, PATHINFO_EXTENSION)) : null;
 
+    // ---- Fast path: vector/modern formats we don't process ----
+    if (in_array($orig_ext_desktop, ['svg', 'avif'], true)) {
+        $args = $arr_get($data, 'args', []);
+        $img_args = array_merge([
+            'alt' => $build_alt($args, get_the_title($image_id)),
+            'loading' => 'lazy',
+            'decoding' => 'async',
+        ], $args);
+
+        LiteImage_Logger::log("Skipping processing for {$orig_ext_desktop}: $file_path_desktop");
+        return wp_get_attachment_image($image_id, ($arr_get($data, 'thumb') ?: 'full'), false, $img_args);
+    }
+
+    // ---- Inputs ----
+    $thumb = $arr_get($data, 'thumb', [1920, 0]); // [w,h] artificial size
+    $args = $arr_get($data, 'args', []);
+    $min = $arr_get($data, 'min', []); // mobile-first (we’ll render after max)
+    $max = $arr_get($data, 'max', []); // desktop-first/mobile constraints (we’ll render first)
+
+    // ---- Ensure arrays ----
+    if (!is_array($min))
+        $min = [];
+    if (!is_array($max))
+        $max = [];
+
+    // ---- Compute thumbnail size key for fallback <img> ----
+    $thumb_data = LiteImage_Thumbnail_Generator::get_thumb_size($thumb, $image_id);
+    $thumb_size_name = $thumb_data['size_name'];
+
+    // ---- Build generation maps for desktop & mobile ----
+    $sizes_to_generate_desktop = [$thumb_size_name => [$thumb_data['width'], $thumb_data['height']]];
+    $sizes_to_generate_mobile = [];
+
+    // Prepare a function to add sizes to a map
+    $add_size = function (&$map, $key, $dim) {
+        if (!is_array($dim) || count($dim) !== 2)
+            return;
+        $w = (int) $dim[0];
+        $h = (int) $dim[1];
+        if ($w < 0 || $h < 0)
+            return;
+        $map[$key] = [$w, $h];
+    };
+
+    // Desktop sizes: all min/max entries go here if they will be served from desktop image
+    foreach (['min' => $min, 'max' => $max] as $type => $sizes) {
+        foreach ($sizes as $width => $dim) {
+            $width = (int) $width;
+            $is_mobile_breakpoint = ($width > 0 && $width < 768) || ($type === 'max' && $width < 768);
+            // If mobile exists, sub-768 sizes belong to mobile; else they stay on desktop
+            if ($mobile_image_id && $is_mobile_breakpoint) {
+                $add_size($sizes_to_generate_mobile, $type . '-' . $width, $dim);
+            } else {
+                $add_size($sizes_to_generate_desktop, $type . '-' . $width, $dim);
+            }
+        }
+    }
+
+    // ---- Generate thumbnails (desktop first, then mobile) ----
+    if (!empty($sizes_to_generate_desktop)) {
+        LiteImage_Thumbnail_Generator::generate_thumbnails($image_id, $file_path_desktop, $sizes_to_generate_desktop);
+    }
+    if ($file_path_mobile && !empty($sizes_to_generate_mobile)) {
+        LiteImage_Thumbnail_Generator::generate_thumbnails($mobile_image_id, $file_path_mobile, $sizes_to_generate_mobile);
+    }
+
+    // ---- Refresh metadata AFTER generation ----
+    $metadata_desktop = wp_get_attachment_metadata($image_id);
+    $metadata_mobile = ($mobile_image_id && $mobile_image_id !== $image_id) ? wp_get_attachment_metadata($mobile_image_id) : null;
+
+    // ---- Build <picture> ----
+    // NOTE: We intentionally render `max` first (mobile-first constraints like max-width ascending),
+    // then `min` (desktop expansions). This reduces "wrong source grabbed too early" issues.
     $sets = [
-        'min' => $min, // Mobile-First: There will be RSORT
-        'max' => $max, // Desktop-First: There will be Sort
+        'max' => $max,
+        'min' => $min,
     ];
 
-    foreach ($sets as $type => $data) {
-        if (empty($data) || !is_array($data)) {
+    // Fallback <img> args
+    $img_args = array_merge([
+        'alt' => $build_alt($args, get_the_title($image_id)),
+        'loading' => 'lazy',
+        'decoding' => 'async',
+    ], $args);
+
+    // Ensure we can get fallback <img> (WP will produce <img> with srcset if the size exists)
+    $fallback_img = wp_get_attachment_image($image_id, $thumb_size_name, false, $img_args);
+    if (!$fallback_img) {
+        // fall back to full if custom size not found for some reason
+        $fallback_img = wp_get_attachment_image($image_id, 'full', false, $img_args);
+        if (!$fallback_img) {
+            LiteImage_Logger::log("Failed to get fallback <img> for image ID: $image_id");
+            return '';
+        }
+    }
+
+    $output = '<picture>';
+
+    foreach ($sets as $type => $breakpoints) {
+        if (empty($breakpoints) || !is_array($breakpoints)) {
             continue;
         }
 
-        // We sort the width in the correct order
-        $widths = array_map('intval', array_keys($data));
+        // Sort widths
+        $widths = array_map('intval', array_keys($breakpoints));
         if ($type === 'min') {
-            rsort($widths, SORT_NUMERIC); // 1440,1200,992,768...
+            rsort($widths, SORT_NUMERIC); // 1440, 1200, 992, 768...
         } else {
-            sort($widths, SORT_NUMERIC);  // 480,767,991,1199...
+            sort($widths, SORT_NUMERIC);  // 320, 480, 767, 991...
         }
 
         foreach ($widths as $width) {
-            $dim = $data[$width];
+            $dim = $breakpoints[$width];
+            if (!is_array($dim) || count($dim) !== 2)
+                continue;
 
-            // Явные скобки, чтобы приоритет операторов не стрелял в ногу
+            // Decide which attachment to use at this breakpoint
             $use_mobile = ($mobile_image_id && $width < 768);
             $output_image_id = $use_mobile ? $mobile_image_id : $image_id;
+            $current_meta = $use_mobile ? $metadata_mobile : $metadata_desktop;
+            $current_orig_ext = $use_mobile ? $orig_ext_mobile : $orig_ext_desktop;
 
-            $size_key = $type . '-' . $width;
+            if (!$current_meta)
+                continue;
 
+            // Compute real target size (align with your generator)
             list($dest_width, $dest_height) = liteimage_downsize($output_image_id, $dim);
             $size_name = "liteimage-{$dest_width}x{$dest_height}";
-            $source_image = wp_get_attachment_image_src($output_image_id, $size_name);
 
+            // Pull the chosen image URL
+            $source_image = wp_get_attachment_image_src($output_image_id, $size_name);
             if (!$source_image) {
+                // If size metadata isn't there (rare timing), skip this source
                 continue;
             }
 
-            // Метаданные размера (аккуратно читаем)
-            $size_metadata = isset($metadata['sizes'][$size_name]) && is_array($metadata['sizes'][$size_name])
-                ? $metadata['sizes'][$size_name]
+            // Size metadata for extension/webp
+            $size_metadata = (isset($current_meta['sizes'][$size_name]) && is_array($current_meta['sizes'][$size_name]))
+                ? $current_meta['sizes'][$size_name]
                 : [];
 
-            $extension = isset($size_metadata['extension']) ? $size_metadata['extension'] : $original_extension;
-            $type_attr = ($extension === 'webp') ? 'image/webp' : "image/{$extension}";
+            // MIME type
+            $ext = isset($size_metadata['extension']) ? $size_metadata['extension'] : $current_orig_ext;
+            $ext = $normalize_ext($ext);
+            $type_attr = ($ext === 'webp') ? 'image/webp' : "image/{$ext}";
 
-            // Формируем media-условие
+            // Media condition
             $media = '(' . ($type === 'min' ? 'min' : 'max') . '-width: ' . esc_attr($width) . 'px)';
 
-            // Если генератор сделал webp-имя файла — подменяем url
+            // Prefer generated webp if present in metadata
             if (!empty($size_metadata['webp'])) {
                 $webp_filename = $size_metadata['webp'];
                 $webp_url = str_replace(basename($source_image[0]), $webp_filename, $source_image[0]);
                 $output .= '<source media="' . $media . '" srcset="' . esc_url($webp_url) . '" type="image/webp">';
+                // Also add non-webp fallback for this media if original isn't webp
+                if ($type_attr !== 'image/webp') {
+                    $output .= '<source media="' . $media . '" srcset="' . esc_url($source_image[0]) . '" type="' . esc_attr($type_attr) . '">';
+                }
             } else {
                 $output .= '<source media="' . $media . '" srcset="' . esc_url($source_image[0]) . '" type="' . esc_attr($type_attr) . '">';
             }
         }
     }
 
-    $img_args = array_merge([
-        'alt' => !empty($args['alt']) ? $args['alt'] : ($args['decorative'] ?? false ? '' : get_the_title($image_id)),
-        'loading' => 'lazy',
-        'decoding' => 'async',
-    ], $args);
-
+    // Allow attribute filter (kept from your original)
     add_filter('wp_get_attachment_image_attributes', 'liteimage_filter_image_attributes', 999, 3);
 
-    $output .= wp_get_attachment_image($image_id, $thumb_size_name, false, $img_args);
+    // Append fallback <img> and close
+    $output .= $fallback_img;
     $output .= '</picture>';
 
     remove_filter('wp_get_attachment_image_attributes', 'liteimage_filter_image_attributes', 999);
@@ -189,8 +271,8 @@ function liteimage_filter_image_attributes($attr, $attachment, $size) {
 // Downsize function
 function liteimage_downsize($id, $size = 'medium') {
     $meta = wp_get_attachment_metadata($id);
-    $orig_width = $meta['width'] ?? 0;
-    $orig_height = $meta['height'] ?? 0;
+    $orig_width = $meta['width'] ? $meta['width'] : 0;
+    $orig_height = $meta['height'] ? $meta['height'] : 0;
 
     if (is_array($size) && isset($size[0], $size[1])) {
         $width = $size[0];
