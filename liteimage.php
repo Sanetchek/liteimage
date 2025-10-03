@@ -172,6 +172,8 @@ function liteimage($image_id, $data = [], $mobile_image_id = null)
         'decoding' => 'async',
     ], $args);
 
+    // Allow attribute filter (kept from your original)
+    add_filter('wp_get_attachment_image_attributes', 'liteimage_filter_image_attributes', 999, 3);
     // Ensure we can get fallback <img> (WP will produce <img> with srcset if the size exists)
     $fallback_img = wp_get_attachment_image($image_id, $thumb_size_name, false, $img_args);
     if (!$fallback_img) {
@@ -182,6 +184,7 @@ function liteimage($image_id, $data = [], $mobile_image_id = null)
             return '';
         }
     }
+    remove_filter('wp_get_attachment_image_attributes', 'liteimage_filter_image_attributes', 999);
 
     $output = '<picture>';
 
@@ -251,14 +254,9 @@ function liteimage($image_id, $data = [], $mobile_image_id = null)
         }
     }
 
-    // Allow attribute filter (kept from your original)
-    add_filter('wp_get_attachment_image_attributes', 'liteimage_filter_image_attributes', 999, 3);
-
     // Append fallback <img> and close
     $output .= $fallback_img;
     $output .= '</picture>';
-
-    remove_filter('wp_get_attachment_image_attributes', 'liteimage_filter_image_attributes', 999);
 
     return $output;
 }
