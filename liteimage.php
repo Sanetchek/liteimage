@@ -25,6 +25,95 @@ use Intervention\Image\ImageManagerStatic as Image;
 define('LITEIMAGE_DIR', plugin_dir_path(__FILE__));
 define('LITEIMAGE_LOG_ACTIVE', false);
 
+/**
+ * Calculate proportional dimensions when one dimension is 0
+ *
+ * @param int $image_id The attachment ID
+ * @param array $thumb Array with [width, height]
+ * @return array Array with calculated [width, height]
+ */
+function liteimage_calculate_proportional_dimensions($image_id, $thumb) {
+    $final_width = $thumb[0] ?? 0;
+    $final_height = $thumb[1] ?? 0;
+
+    LiteImage_Logger::log("Calculating dimensions for image {$image_id}: requested [{$final_width}, {$final_height}]");
+
+    // Get image metadata
+    $image_meta = wp_get_attachment_metadata($image_id);
+    LiteImage_Logger::log("Image metadata for {$image_id}: " . print_r($image_meta, true));
+
+    if (!$image_meta || !isset($image_meta['width']) || !isset($image_meta['height'])) {
+        LiteImage_Logger::log("No metadata available, trying to get SVG dimensions from file");
+
+        // Try to get SVG dimensions from file content
+        $file_path = get_attached_file($image_id);
+        if ($file_path && file_exists($file_path)) {
+            $svg_content = file_get_contents($file_path);
+            if ($svg_content) {
+                // Try to extract dimensions from SVG viewBox or width/height attributes
+                if (preg_match('/viewBox=["\']([^"\']*)["\']/', $svg_content, $matches)) {
+                    $viewBox = explode(' ', $matches[1]);
+                    if (count($viewBox) >= 4) {
+                        $original_width = floatval($viewBox[2]);
+                        $original_height = floatval($viewBox[3]);
+                        LiteImage_Logger::log("Extracted SVG dimensions from viewBox: {$original_width}x{$original_height}");
+                    }
+                } elseif (preg_match('/width=["\']([^"\']*)["\']/', $svg_content, $matches) &&
+                          preg_match('/height=["\']([^"\']*)["\']/', $svg_content, $height_matches)) {
+                    $original_width = floatval($matches[1]);
+                    $original_height = floatval($height_matches[1]);
+                    LiteImage_Logger::log("Extracted SVG dimensions from width/height: {$original_width}x{$original_height}");
+                }
+            }
+        }
+
+        // If we still don't have dimensions, use fallback
+        if (!isset($original_width) || !isset($original_height)) {
+            LiteImage_Logger::log("Could not extract SVG dimensions, using fallback calculation");
+            if ($final_width == 0 && $final_height > 0) {
+                $final_width = $final_height * 2; // Assume 2:1 ratio
+            } elseif ($final_height == 0 && $final_width > 0) {
+                $final_height = $final_width / 2; // Assume 2:1 ratio
+            }
+            LiteImage_Logger::log("Fallback calculation result: [{$final_width}, {$final_height}]");
+            return [$final_width, $final_height];
+        }
+
+        // Use extracted dimensions for calculation
+        $image_meta = ['width' => $original_width, 'height' => $original_height];
+    }
+
+    $original_width = $image_meta['width'];
+    $original_height = $image_meta['height'];
+
+    // If width is 0, calculate proportional width based on height
+    if ($final_width == 0 && $final_height > 0) {
+        // If the requested height equals original height, use original width
+        if ($final_height == $original_height) {
+            $final_width = $original_width;
+            LiteImage_Logger::log("Using original width: {$final_width} (height matches original: {$original_height})");
+        } else {
+            // Calculate proportional width
+            $final_width = round(($original_width / $original_height) * $final_height);
+            LiteImage_Logger::log("Calculated proportional width: {$final_width} (original: {$original_width}x{$original_height}, requested height: {$final_height})");
+        }
+    }
+
+    // If height is 0, calculate proportional height based on width
+    if ($final_height == 0 && $final_width > 0) {
+        // If the requested width equals original width, use original height
+        if ($final_width == $original_width) {
+            $final_height = $original_height;
+        } else {
+            // Calculate proportional height
+            $final_height = round(($original_height / $original_width) * $final_width);
+        }
+    }
+
+    LiteImage_Logger::log("Final calculated dimensions: [{$final_width}, {$final_height}]");
+    return [$final_width, $final_height];
+}
+
 // Initialize settings
 require_once LITEIMAGE_DIR . 'includes/settings.php';
 
@@ -119,16 +208,23 @@ function liteimage($image_id, $data = [], $mobile_image_id = null)
 
             // Add width and height attributes if thumb size is provided
             if (is_array($thumb)) {
-                if (isset($thumb[0]) && $thumb[0] > 0) {
-                    $attributes .= ' width="' . esc_attr($thumb[0]) . '"';
+                LiteImage_Logger::log("SVG processing: calling calculate_proportional_dimensions with thumb: [" . ($thumb[0] ?? 'null') . ", " . ($thumb[1] ?? 'null') . "]");
+                list($final_width, $final_height) = liteimage_calculate_proportional_dimensions($image_id, $thumb);
+
+                // Add the calculated dimensions
+                if ($final_width > 0) {
+                    $attributes .= ' width="' . esc_attr($final_width) . '"';
+                    LiteImage_Logger::log("Added width attribute: {$final_width}");
                 }
-                if (isset($thumb[1]) && $thumb[1] > 0) {
-                    $attributes .= ' height="' . esc_attr($thumb[1]) . '"';
+                if ($final_height > 0) {
+                    $attributes .= ' height="' . esc_attr($final_height) . '"';
+                    LiteImage_Logger::log("Added height attribute: {$final_height}");
                 }
             }
 
             LiteImage_Logger::log("Skipping processing for SVG: $file_path_desktop");
-            return '<img src="' . esc_url($image_url) . '"' . $attributes . ' />';
+            // Add debug comment to HTML
+            return '<img src="' . esc_url($image_url) . '"' . $attributes . ' data-debug="SVG_processed" />';
         } else {
             // For other formats like AVIF, use standard WordPress function
             $img_args = array_merge([

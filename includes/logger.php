@@ -3,7 +3,7 @@ defined('ABSPATH') || exit;
 
 class LiteImage_Logger {
     public static function log($message) {
-        if (defined('LITEIMAGE_LOG_ACTIVE') && LITEIMAGE_LOG_ACTIVE && defined('WP_DEBUG') && WP_DEBUG) {
+        if (defined('LITEIMAGE_LOG_ACTIVE') && LITEIMAGE_LOG_ACTIVE) {
             $log_message = is_array($message) ? wp_json_encode($message) : $message;
             self::log_data([
                 'message' => $log_message,
