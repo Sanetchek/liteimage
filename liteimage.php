@@ -90,14 +90,56 @@ function liteimage($image_id, $data = [], $mobile_image_id = null)
     // ---- Fast path: vector/modern formats we don't process ----
     if (in_array($orig_ext_desktop, ['svg', 'avif'], true)) {
         $args = $arr_get($data, 'args', []);
-        $img_args = array_merge([
-            'alt' => $build_alt($args, get_the_title($image_id)),
-            'loading' => 'lazy',
-            'decoding' => 'async',
-        ], $args);
+        $thumb = $arr_get($data, 'thumb', 'full');
 
-        LiteImage_Logger::log("Skipping processing for {$orig_ext_desktop}: $file_path_desktop");
-        return wp_get_attachment_image($image_id, ($arr_get($data, 'thumb') ?: 'full'), false, $img_args);
+        // For SVG files, handle dimensions properly
+        if ($orig_ext_desktop === 'svg') {
+            $img_args = array_merge([
+                'alt' => $build_alt($args, get_the_title($image_id)),
+                'loading' => 'lazy',
+                'decoding' => 'async',
+            ], $args);
+
+            // Get the image URL directly for SVG
+            $image_url = wp_get_attachment_image_url($image_id, 'full');
+            if (!$image_url) {
+                LiteImage_Logger::log("Failed to get SVG URL for image ID: $image_id");
+                return '';
+            }
+
+            // Build attributes string
+            $attributes = '';
+            foreach ($img_args as $key => $value) {
+                if ($key === 'style' && is_string($value)) {
+                    $attributes .= ' style="' . esc_attr($value) . '"';
+                } elseif ($key !== 'style') {
+                    $attributes .= ' ' . esc_attr($key) . '="' . esc_attr($value) . '"';
+                }
+            }
+
+            // Add width and height attributes if thumb size is provided
+            if (is_array($thumb)) {
+                if (isset($thumb[0]) && $thumb[0] > 0) {
+                    $attributes .= ' width="' . esc_attr($thumb[0]) . '"';
+                }
+                if (isset($thumb[1]) && $thumb[1] > 0) {
+                    $attributes .= ' height="' . esc_attr($thumb[1]) . '"';
+                }
+            }
+
+            LiteImage_Logger::log("Skipping processing for SVG: $file_path_desktop");
+            return '<img src="' . esc_url($image_url) . '"' . $attributes . ' />';
+        } else {
+            // For other formats like AVIF, use standard WordPress function
+            $img_args = array_merge([
+                'alt' => $build_alt($args, get_the_title($image_id)),
+                'loading' => 'lazy',
+                'decoding' => 'async',
+            ], $args);
+
+            LiteImage_Logger::log("Skipping processing for {$orig_ext_desktop}: $file_path_desktop");
+            return wp_get_attachment_image($image_id, ($thumb ?: 'full'), false, $img_args);
+        }
     }
 
     // ---- Inputs ----
