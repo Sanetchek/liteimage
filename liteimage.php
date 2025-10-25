@@ -33,8 +33,8 @@ define('LITEIMAGE_LOG_ACTIVE', false);
  * @return array Array with calculated [width, height]
  */
 function liteimage_calculate_proportional_dimensions($image_id, $thumb) {
-    $final_width = $thumb[0] ?? 0;
-    $final_height = $thumb[1] ?? 0;
+    $final_width = isset($thumb[0]) ? $thumb[0] : 0;
+    $final_height = isset($thumb[1]) ? $thumb[1] : 0;
 
     // Get image metadata
     $image_meta = wp_get_attachment_metadata($image_id);
@@ -256,7 +256,7 @@ function liteimage($image_id, $data = [], $mobile_image_id = null)
     foreach (['min' => $min, 'max' => $max] as $type => $sizes) {
         foreach ($sizes as $width => $dim) {
             $width = (int) $width;
-            $is_mobile_breakpoint = ($width > 0 && $width < 768) || ($type === 'max' && $width < 768);
+            $is_mobile_breakpoint = ($width > 0 && $width <= 768) || ($type === 'max' && $width <= 768);
             // If mobile exists, sub-768 sizes belong to mobile; else they stay on desktop
             if ($mobile_image_id && $is_mobile_breakpoint) {
                 $add_size($sizes_to_generate_mobile, $type . '-' . $width, $dim);
@@ -328,7 +328,7 @@ function liteimage($image_id, $data = [], $mobile_image_id = null)
                 continue;
 
             // Decide which attachment to use at this breakpoint
-            $use_mobile = ($mobile_image_id && $width < 768);
+            $use_mobile = ($mobile_image_id && $width <= 768);
             $output_image_id = $use_mobile ? $mobile_image_id : $image_id;
             $current_meta = $use_mobile ? $metadata_mobile : $metadata_desktop;
             $current_orig_ext = $use_mobile ? $orig_ext_mobile : $orig_ext_desktop;
