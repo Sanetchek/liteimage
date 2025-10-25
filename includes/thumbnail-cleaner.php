@@ -31,7 +31,7 @@ class LiteImage_Thumbnail_Cleaner {
                             LiteImage_Logger::log("Deleted LiteImage thumbnail: $file for {$image->ID}");
                         }
                     }
-                    if ($data['webp']) {
+                    if (isset($data['webp']) && $data['webp']) {
                         $webp = $base_path . '/' . $data['webp'];
                         if (file_exists($webp)) {
                             wp_delete_file($webp);
@@ -79,7 +79,7 @@ class LiteImage_Thumbnail_Cleaner {
                             LiteImage_Logger::log("Deleted WordPress thumbnail: $file for {$image->ID}");
                         }
                     }
-                    if ($data['webp']) {
+                    if (isset($data['webp']) && $data['webp']) {
                         $webp = $base_path . '/' . $data['webp'];
                         if (file_exists($webp)) {
                             wp_delete_file($webp);
