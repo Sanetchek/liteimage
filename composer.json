@@ -1,35 +1,28 @@
 {
   "name": "sanetchek/liteimage",
   "type": "wordpress-plugin",
-  "version": "1.0.0",
+  "version": "3.2.0",
   "description": "Image optimization plugin for WordPress using Intervention Image.",
   "keywords": ["WordPress", "Plugin", "Image Optimization", "WebP", "Intervention Image"],
   "license": "GPL-2.0-or-later",
   "require": {
-    "php": ">=5.6",
-    "intervention/image": "^2.7.2"
+    "php": ">=8.1",
+    "intervention/image": "^3.0"
   },
   "require-dev": {
-    "wp-cli/i18n-command": "^2.2.5"
+    "wp-cli/i18n-command": "^2.2.5",
+    "phpunit/phpunit": "^9.5",
+    "squizlabs/php_codesniffer": "^3.7",
+    "wp-coding-standards/wpcs": "^2.3"
   },
   "scripts": {
     "make-pot": "vendor/bin/wp i18n make-pot . languages/liteimage.pot",
-    "make-content": "node generateContent.js",
-    "generate-script": [
-      "@php -r \"file_put_contents('generateContent.js', base64_decode('Y29uc3QgZnMgPSByZXF1aXJlKCJmcyIpLnByb21pc2VzOwpjb25zdCBwYXRoID0gcmVxdWlyZSgicGF0aCIpOwoKYXN5bmMgZnVuY3Rpb24gZ2VuZXJhdGVQcm9qZWN0Q29udGVudChvdXRwdXRGaWxlLCByb290RGlyLCBleGNsdWRlID0gW10pIHsKICAgIGxldCBzdHJ1Y3R1cmUgPSAiUHJvamVjdCBGaWxlIFN0cnVjdHVyZTpcbiI7CiAgICBsZXQgY29udGVudCA9ICJcbkRldGFpbGVkIEZpbGUgQ29udGVudHM6XG4iOwogICAgY29uc3QgZGVmYXVsdEV4Y2x1c2lvbnMgPSBbInZlbmRvciIsICJub2RlX21vZHVsZXMiLCAiLmdpdCIsICIuZ2l0aWdub3JlIiwgb3V0cHV0RmlsZV07CgogICAgYXN5bmMgZnVuY3Rpb24gYnVpbGRTdHJ1Y3R1cmUoZGlyLCByZWxhdGl2ZVBhdGggPSAiIiwgaW5kZW50ID0gIiIpIHsKICAgICAgICBjb25zdCBlbnRyaWVzID0gYXdhaXQgZnMucmVhZGRpcihkaXIsIHsgd2l0aEZpbGVUeXBlczogdHJ1ZSB9KTsKICAgICAgICBmb3IgKGNvbnN0IGVudHJ5IG9mIGVudHJpZXMpIHsKICAgICAgICAgICAgY29uc3QgZnVsbFBhdGggPSBwYXRoLmpvaW4oZGlyLCBlbnRyeS5uYW1lKTsKICAgICAgICAgICAgY29uc3QgcmVsUGF0aCA9IHBhdGguam9pbihyZWxhdGl2ZVBhdGgsIGVudHJ5Lm5hbWUpOwogICAgICAgICAgICBpZiAoZGVmYXVsdEV4Y2x1c2lvbnMuc29tZShwYXR0ZXJuID0+IGZ1bGxQYXRoLmluY2x1ZGVzKHBhdHRlcm4pIHx8IHJlbFBhdGguaW5jbHVkZXMocGF0dGVybikgfHwgcGF0aC5iYXNlbmFtZShmdWxsUGF0aCkgPT09IHBhdHRlcm4pKSBjb250aW51ZTsKICAgICAgICAgICAgc3RydWN0dXJlICs9IGAke2luZGVudH0ke2VudHJ5Lm5hbWV9JHtlbnRyeS5pc0RpcmVjdG9yeSgpID8gIi8iIDogIiJ9XG5gOwogICAgICAgICAgICBpZiAoZW50cnkuaXNEaXJlY3RvcnkoKSkgewogICAgICAgICAgICAgICAgYXdhaXQgYnVpbGRTdHJ1Y3R1cmUoZnVsbFBhdGgsIHJlbFBhdGgsIGluZGVudCArICIgIik7CiAgICAgICAgICAgIH0KICAgICAgICB9CiAgICB9CgogICAgYXN5bmMgZnVuY3Rpb24gdHJhdmVyc2VEaXIoZGlyLCByZWxhdGl2ZVBhdGggPSAiIikgewogICAgICAgIGNvbnN0IGVudHJpZXMgPSBhd2FpdCBmcy5yZWFkZGlyKGRpciwgeyB3aXRoRmlsZVR5cGVzOiB0cnVlIH0pOwogICAgICAgIGZvciAoY29uc3QgZW50cnkgb2YgZW50cmllcykgewogICAgICAgICAgICBjb25zdCBmdWxsUGF0aCA9IHBhdGguam9pbihkaXIsIGVudHJ5Lm5hbWUpOwogICAgICAgICAgICBjb25zdCByZWxQYXRoID0gcGF0aC5qb2luKHJlbGF0aXZlUGF0aCwgZW50cnkubmFtZSk7CiAgICAgICAgICAgIGlmIChleGNsdWRlLnNvbWUocGF0dGVybiA9PiBmdWxsUGF0aC5pbmNsdWRlcyhwYXR0ZXJuKSB8fCByZWxQYXRoLmluY2x1ZGVzKHBhdHRlcm4pIHx8IHBhdGguYmFzZW5hbWUoZnVsbFBhdGgpID09PSBwYXR0ZXJuKSB8fCAvXC4ocG5nfGpwZ3xqcGVnfGdpZnxibXB8c3ZnfGxvZykkL2kudGVzdChlbnRyeS5uYW1lKSkgY29udGludWU7CiAgICAgICAgICAgIGlmIChlbnRyeS5pc0RpcmVjdG9yeSgpKSB7CiAgICAgICAgICAgICAgICBjb250ZW50ID09IGBcbkRpcmVjdG9yeTogJHtyZWxQYXRofS9cbmA7CiAgICAgICAgICAgICAgICBhd2FpdCB0cmF2ZXJzZURpcihmdWxsUGF0aCwgcmVsUGF0aCk7CiAgICAgICAgICAgIH0gZWxzZSB7CiAgICAgICAgICAgICAgICBjb250ZW50ID09IGBcbkZpbGU6ICR7cmVsUGF0aH1cbmA7CiAgICAgICAgICAgICAgICB0cnkgewogICAgICAgICAgICAgICAgICAgIGNvbnN0IGZpbGVDb250ZW50ID0gYXdhaXQgZnMucmVhZEZpbGUoZnVsbFBhdGgsICJ1dGY4Iik7CiAgICAgICAgICAgICAgICAgICAgY29udGVudCArPSBgQ29udGVudDpcbiR7ZmlsZUNvbnRlbnR9XG5gOwogICAgICAgICAgICAgICAgICAgIGNvbnRlbnQgPT0gIi0iLnJlcGVhdCg1MCkgKyAiXG4iOwogICAgICAgICAgICAgICAgfSBjYXRjaCAoZXJyKSB7CiAgICAgICAgICAgICAgICAgICAgY29udGVudCArPSBgRXJyb3IgcmVhZGluZyBmaWxlOiAke2Vyci5tZXNzYWdlfVxuYDsKICAgICAgICAgICAgICAgICAgICBjb250ZW50ICs9ICItIi5yZXBlYXQoNTApICsgIlxuIjsKICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgfQogICAgICAgIH0KICAgIH0KCiAgICB0cnkgewogICAgICAgIGF3YWl0IGJ1aWxkU3RydWN0dXJlKHJvb3REaXIpOwogICAgICAgIGF3YWl0IHRyYXZlcnNlRGlyKHJvb3REaXIpOwogICAgICAgIGF3YWl0IGZzLndyaXRlRmlsZShvdXRwdXRGaWxlLCBzdHJ1Y3R1cmUgKyBjb250ZW50KTsKICAgICAgICBjb25zb2xlLmxvZyhgUHJvamVjdCBjb250ZW50IHdyaXR0ZW4gdG8gJHtvdXRwdXRGaWxlfWApOwogICAgfSBjYXRjaCAoZXJyKSB7CiAgICAgICAgY29uc29sZS5lcnJvcihgRXJyb3I6ICR7ZXJyLm1lc3NhZ2V9YCk7CiAgICB9Cn0KCmdlbmVyYXRlUHJvamVjdENvbnRlbnQoInByb2plY3RfY29udGVudC50eHQiLCAiLiIsIFsibm9kZV9tb2R1bGVzIiwgInZlbmRvciIsICJsYW5ndWFnZXMiLCAiLmdpdGlnbm9yZSIsICIuZ2l0IiwgImdlbmVyYXRlQ29udGVudC5qcyIsICJwcm9qZWN0X2NvbnRlbnQudHh0IiwgInJlYWRtZS50eHQiLCAiY29tcG9zZXIuanNvbiIsICJjb21wb3Nlci5sb2NrIiwgJ2xvZ3MnXSk7'));\""
-    ],
-    "clean-prod": [
-      "@php -r \"foreach (['generateContent.js', 'project_content.txt', 'liteimage-debug.log'] as $file) { if (file_exists($file)) unlink($file); }\""
-    ],
-    "dev": [
-      "composer install",
-      "@generate-script"
-    ],
+    "cs-check": "phpcs --standard=phpcs.xml.dist",
+    "cs-fix": "phpcbf --standard=phpcs.xml.dist",
+    "test": "phpunit",
     "prod": [
       "composer make-pot",
-      "@clean-prod",
-      "composer install --no-dev --optimize-autoloader",
-      "rm -rf logs"
+      "composer install --no-dev --optimize-autoloader"
     ]
   },
   "autoload": {

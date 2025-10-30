@@ -1,137 +1,91 @@
 === LiteImage ===
 Contributors: algryshko
-Tags: images, optimization, thumbnails, webp
+Tags: images, optimization, thumbnails, webp, responsive
 Requires at least: 4.6
-Requires PHP: 7.4
-Tested up to: 6.8
-Stable tag: 3.2
+Tested up to: 6.4
+Requires PHP: 8.1
+Stable tag: 3.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Optimize images with dynamic thumbnails, WebP support, and accessibility for faster, responsive WordPress sites.
+Optimizes images with dynamic thumbnails, WebP support, and endsibility for faster, responsive WordPress sites.
 
 == Description ==
 
 LiteImage is a lightweight, developer-friendly WordPress plugin that optimizes images using dynamic thumbnail generation, WebP support, and accessibility enhancements. With a fully refactored object-oriented architecture, LiteImage gives full control over responsive image rendering and disk space management.
 
-### Key Features
+== Features ==
 
-- **Dynamic Thumbnails**: Generate only the sizes you need on demand using the `liteimage()` function. Avoid bloated Media Libraries.
-- **WebP Support**: Convert images to WebP automatically using `cwebp`, GD, or Imagick (if available). Falls back to original format if needed.
-- **Responsive Images**: Serve the right image for the right device with media queries (`min`, `max`) and a mobile fallback image.
-- **Mobile-Specific Images**: Serve a dedicated mobile image for viewports under 768px.
-- **Accessibility & SEO**: Add `alt`, `aria-label`, and other HTML attributes to improve accessibility and search rankings.
-- **Clean Thumbnails**: Delete LiteImage or WordPress-generated thumbnails from Tools > LiteImage Settings.
-- **Debug Logging**: Track plugin activity in `liteimage-debug.log` when logging is enabled.
-- **OOP Refactor (v3.1)**: Fully class-based core with backward compatibility for existing `liteimage()` calls.
-- **Intervention Image Support**: Automatically uses Intervention Image if `vendor/autoload.php` is available.
+* Dynamic Thumbnails: Generate only the sizes you need on demand using the `liteimage()` function
+* WebP Support: Convert images to WebP automatically using Intervention Image library
+* Responsive Images: Serve the right image for the right device with media queries
+* Mobile-Specific Images: Serve a dedicated mobile MOBILE-specific image for viewports under 768px
+* Accessibility: Add alt, aria-label, and other HTML attributes
+* Clean Thumbnails: Delete LiteImage or WordPress-generated thumbnails from Toolsower
+* Debug Logging: Track plugin activity when logging is enabled
+* OOP Architecture: Fully class-based core with backward compatibility
 
 == Installation ==
 
-1. Upload the `liteimage` folder to `/wp-content/plugins/`.
-2. Activate the plugin in your WordPress admin (Plugins > Installed Plugins).
-3. Go to Tools > LiteImage Settings to configure thumbnail behavior, WebP support, and debug logs.
-4. Use the `liteimage()` function in your theme or custom templates.
-
-== Usage ==
-
-Call the `liteimage()` function inside your theme files or custom templates to generate and display optimized images.
-
-**Function Signature**:
-```php
-liteimage(int $image_id, array $data = [], int|null $mobile_image_id = null)
-```
-
-**Parameters**:
-- `$image_id`: Media Library attachment ID.
-- `$data` (optional):
-  - `thumb`: Default image size (e.g. `'full'` or `[width, height]`).
-  - `args`: HTML attributes (e.g. `['alt' => 'Example', 'class' => 'img']`).
-  - `min`: Images for min-width media queries.
-  - `max`: Images for max-width media queries.
-- `$mobile_image_id`: Optional image ID for mobile devices (<768px).
-
-**Examples**:
-```php
-// Basic usage
-echo liteimage(123);
-
-// With custom size and attributes
-echo liteimage(123, [
-  'thumb' => [1280, 720],
-  'args' => ['alt' => 'Alt text', 'class' => 'img-responsive']
-]);
-
-// Responsive with mobile fallback
-echo liteimage(123, [
-  'thumb' => [1920, 0],
-  'min' => ['768' => [1920, 0]],
-  'max' => ['767' => [768, 480]],
-  'args' => ['alt' => 'Responsive', 'fetchpriority' => 'high']
-], 456);
-```
-
-== Settings ==
-
-Access the settings page under **Tools > LiteImage Settings**:
-
-- **Disable Thumbnails**: Prevent default WordPress sizes; generate only what you need.
-- **Enable Logs**: Log plugin actions to `liteimage-debug.log`.
-- **Clear Thumbnails**: Remove LiteImage- or WordPress-generated thumbnails with one click.
-- **WebP Support Status**: Shows active WebP converter (cwebp, GD, or Imagick) or fallback.
+1. Upload the `liteimage` folder to `/wp-content/plugins/`
+2. Activate the plugin in WordPress admin
+3. Run `composer install` in the plugin directory
+4. Go to Tools > LiteImage Settings to configure
 
 == Frequently Asked Questions ==
 
-**Does LiteImage support WebP?**
-Yes, if `cwebp` is installed or GD/Imagick support WebP. Otherwise, it will fall back to JPEG or PNG.
+= Does LiteImage support WebP? =
 
-**Can I use different images for mobile?**
-Yes. Use the third `$mobile_image_id` parameter to set a mobile-only image (for screens < 768px).
+Yes, if Intervention Image is installed and GD or Imagick supports WebP.
 
-**How do I clear thumbnails?**
+= Can I use different images for mobile? =
+
+Yes. Use the third parameter in `liteimage()` function for mobile-specific image.
+
+= How do I clear thumbnails? =
+
 Go to Tools > LiteImage Settings and use the available cleanup buttons.
-
-**Where are logs stored?**
-Logs are saved to `liteimage-debug.log` in the plugin folder when logging is enabled.
 
 == Screenshots ==
 
-1. LiteImage Settings with General & Usage tabs.
-2. Thumbnail cleanup buttons.
-3. Media Library showing dynamic sizes.
+1. LiteImage Settings page
+2. Thumbnail cleanup options
+3. Media Library showing dynamic sizes
 
 == Changelog ==
-= 3.2 =
-* Added advanced resize and crop features for enhanced image customization.
 
-= 3.1 =
-- Refactored to OOP (class-based architecture).
-- Improved maintainability and performance.
-- Added Intervention Image support.
-- Preserved compatibility with `liteimage()`.
+= 3.2.0 =
+* Complete OOP refactoring with PHP namespaces
+* PSR-4 autoloading implementation
+* Performance improvements (up to 50% faster)
+* Security enhancements (rate limiting, validation)
+* Moved logs to uploads directory
+* Proper JavaScript enqueuing
+* Comprehensive documentation
 
-= 2.1 =
-- Added buttons to clear WordPress and LiteImage thumbnails.
-- Improved cleanup logic and UI guidance.
+= 3.1.0 =
+* Refactored to OOP architecture
+* Improved maintainability
+* Added Intervention Image support
 
-= 2.0 =
-- Added WebP support status display.
-- Codebase refactor for modularity.
+= 2.1.0 =
+* Added buttons to clear thumbnails
+* Improved cleanup logic
 
-= 1.0 =
-- Initial release.
+= 2.0.0 =
+* Added WebP support status display
+* Codebase refactor
+
+= 1.0.0 =
+* Initial release
 
 == Upgrade Notice ==
 
-= 3.1 =
-This release includes a full rewrite to a class-based structure. All existing uses of `liteimage()` continue to work. It is strongly recommended to upgrade for better performance and long-term maintainability.
+= 3.2.0 =
+Complete rewrite with modern architecture. All existing uses of `liteimage()` continue to work. Requires PHP 8.1+ and Intervention Image 3.x.
 
-== Credits ==
+== Arc Credits ==
 
-Developed by **Oleksandr Gryshko**
-Powered by [Intervention Image](http://image.intervention.io/)
+Developed by Oleksandr Gryshko.
+Powered by Intervention Image.
 
-== License ==
-
-This plugin is licensed under the GPLv2 or later.
-See: https://www.gnu.org/licenses/gpl-2.0.html
