@@ -1,10 +1,10 @@
 === LiteImage ===
 Contributors: algryshko
 Tags: images, optimization, thumbnails, webp, responsive
-Requires at least: 4.6
-Tested up to: 6.4
-Requires PHP: 8.1
-Stable tag: 3.2.0
+Requires at least: 5.8
+Tested up to: 6.8
+Requires PHP: 8.0
+Stable tag: 3.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,14 @@ Go to Tools > LiteImage Settings and use the available cleanup buttons.
 3. Media Library showing dynamic sizes
 
 == Changelog ==
+
+= 3.2.1 =
+* Fixed: Unescaped output in admin tab navigation (WordPress.org Plugin Check compliance)
+* Fixed: Removed deprecated load_plugin_textdomain() call (WordPress auto-loads translations since 4.6)
+* Fixed: Updated readme.txt headers to match plugin requirements (Tested up to: 6.8, Requires at least: 5.8)
+* Fixed: Added phpcs:ignore comments for necessary direct database queries in transient cleanup
+* Fixed: WordPress.org Plugin Check compliance - all errors and warnings resolved
+* Improved: Code standards compliance for WordPress.org submission
 
 = 3.2.0 =
 * Complete OOP refactoring with PHP namespaces

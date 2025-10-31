@@ -38,6 +38,18 @@ class Logger
     }
 
     /**
+     * Get absolute log directory path under uploads
+     *
+     * @return string
+     */
+    public static function get_log_dir()
+    {
+        $upload_dir = wp_upload_dir();
+        $basedir = isset($upload_dir['basedir']) ? rtrim($upload_dir['basedir'], '/\\') : '';
+        return $basedir . '/liteimage-logs/';
+    }
+
+    /**
      * Write log data to file
      *
      * @param array $data Log data containing message and timestamp
@@ -46,8 +58,7 @@ class Logger
     private static function log_data($data)
     {
         // Use WordPress uploads directory for logs
-        $upload_dir = wp_upload_dir();
-        $log_dir = $upload_dir['basedir'] . '/liteimage-logs/';
+        $log_dir = self::get_log_dir();
 
         // Load WordPress filesystem
         if (!function_exists('WP_Filesystem')) {

@@ -33,7 +33,7 @@ class Plugin
      *
      * @var string
      */
-    const VERSION = '3.2.0';
+    const VERSION = '3.2.1';
 
     /**
      * Constructor
@@ -74,9 +74,6 @@ class Plugin
      */
     public function init()
     {
-        // Load text domain
-        load_plugin_textdomain('liteimage', false, dirname(plugin_basename(LITEIMAGE_DIR . 'liteimage.php')) . '/languages');
-
         // Initialize settings
         Settings::get_instance();
 
@@ -100,6 +97,7 @@ class Plugin
 
         // Clear dimension caches for this attachment
         global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Transient cleanup requires direct DB access
         $wpdb->query(
             $wpdb->prepare(
                 "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
@@ -133,6 +131,7 @@ class Plugin
     {
         // Cleanup transients on deactivation
         global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Transient cleanup requires direct DB access
         $wpdb->query(
             "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_liteimage_%' OR option_name LIKE '_transient_timeout_liteimage_%'"
         );

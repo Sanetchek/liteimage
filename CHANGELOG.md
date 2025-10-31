@@ -5,6 +5,58 @@ All notable changes to LiteImage will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.1] - 2025-10-31
+
+> **🔧 Patch Release: WordPress.org Plugin Check Compliance**
+>
+> This patch release addresses all WordPress.org Plugin Check errors and warnings to ensure full compliance with WordPress.org guidelines and standards.
+
+### 🐛 Fixed
+
+**WordPress.org Plugin Check Compliance**
+- 🔒 Fixed unescaped output in admin tab navigation (`$active` variable now properly escaped with `esc_attr()`)
+- 🗑️ Removed deprecated `load_plugin_textdomain()` call (WordPress auto-loads translations since WP 4.6)
+- ✅ Added `phpcs:ignore` comments for necessary direct database queries in transient cleanup operations
+- 🧪 Added `phpcs:ignore` for test file `mkdir()` usage in mock function
+- 📝 Updated readme.txt headers to match plugin requirements:
+  - Tested up to: 6.4 → 6.8
+  - Requires at least: 4.6 → 5.8
+  - Requires PHP: 8.1 → 8.0
+
+**Code Standards**
+- 🎯 Resolved all WordPress.org Plugin Check errors (4 critical issues fixed)
+- ⚠️ Addressed all WordPress.org Plugin Check warnings (6 warnings resolved)
+- 📋 Added proper PHPCS ignore comments with detailed explanations for edge cases
+- 🔐 Improved code security and escaping compliance
+
+### 🔄 Changed
+
+**Documentation**
+- 📖 Updated all version references across plugin files
+- 📝 Synchronized readme.txt requirements with main plugin file
+
+### Technical Details
+
+**Files Modified:**
+- `src/Admin/AdminPage.php` - Escaped output, added nonce verification comment
+- `src/Plugin.php` - Removed deprecated translation loading, added DB query comments
+- `tests/LoggerPathTest.php` - Added phpcs:ignore for test mock
+- `readme.txt` - Updated headers and added changelog entry
+- `uninstall.php` - Added phpcs:ignore for cleanup query
+- `liteimage.php` - Version bump to 3.2.1
+- `CHANGELOG.md` - This changelog update
+
+**WordPress.org Compliance Status:**
+- ✅ All Plugin Check errors resolved (0 errors)
+- ✅ All Plugin Check warnings resolved (0 warnings)
+- ✅ Ready for WordPress.org submission
+
+### 📚 For Developers
+
+No breaking changes or new features in this patch release. Safe to update without any code modifications.
+
+---
+
 ## [3.2.0] - 2025-06-19
 
 > **🎉 Major Release: Complete Refactoring & WordPress.org Compliance**
@@ -318,6 +370,7 @@ This release addresses all issues from WordPress.org plugin review:
 - WebP support
 - Basic admin interface
 
+[3.2.1]: https://github.com/Sanetchek/liteimage/compare/v3.2.0...v3.2.1
 [3.2.0]: https://github.com/Sanetchek/liteimage/compare/v3.1.0...v3.2.0
 [3.1.0]: https://github.com/Sanetchek/liteimage/compare/v2.1.0...v3.1.0
 [2.1.0]: https://github.com/Sanetchek/liteimage/compare/v2.0.0...v2.1.0

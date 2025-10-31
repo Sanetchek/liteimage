@@ -16,6 +16,8 @@ use Intervention\Image\Interfaces\ImageInterface;
 use LiteImage\Config;
 use LiteImage\Support\Logger;
 use LiteImage\Support\WebPSupport;
+use LiteImage\Admin\Settings;
+use LiteImage\Admin\AdminPage;
 
 defined('ABSPATH') || exit;
 
@@ -69,11 +71,20 @@ class ThumbnailGenerator
             return '';
         }
 
-        // Validate MIME type
         $file_type = wp_check_filetype($file_path);
         if (!in_array($file_type['type'], Config::ALLOWED_MIME_TYPES, true)) {
             Logger::log("Invalid MIME type for $file_path: " . $file_type['type']);
             return '';
+        }
+
+        $settings = Settings::get_instance();
+        $use_webp = $settings->get('convert_to_webp') && AdminPage::is_webp_supported_anywhere();
+        $quality = (int) $settings->get('thumbnail_quality');
+        if ($quality < 60) {
+            $quality = 60;
+        }
+        if ($quality > 100) {
+            $quality = 100;
         }
 
         $metadata = wp_get_attachment_metadata($attachment_id) ?: ['sizes' => []];
@@ -108,25 +119,57 @@ class ThumbnailGenerator
                 basename($file_path, '.' . $original_extension) . "-$size_name.webp",
                 $file_path
             );
+            $orig_ext_path = str_replace(
+                basename($file_path),
+                basename($file_path, '.' . $original_extension) . "-$size_name." . $original_extension,
+                $file_path
+            );
 
-            if (!isset($metadata['sizes'][$size_name]) || !file_exists($webp_path)) {
-                self::generate_thumbnail(
-                    $image,
-                    $file_path,
-                    $size_name,
-                    $dest_width,
-                    $dest_height,
-                    $webp_path,
-                    $original_extension,
-                    $width && $height
-                );
-                $metadata['sizes'][$size_name] = [
-                    'file' => basename($webp_path),
-                    'webp' => basename($webp_path),
-                    'width' => $dest_width,
-                    'height' => $dest_height,
-                    'extension' => 'webp',
-                ];
+            // We generate only if WebP is needed:
+            if ($use_webp) {
+                if (!isset($metadata['sizes'][$size_name]) || !file_exists($webp_path)) {
+                    // Start generation with quality from settings
+                    self::generate_thumbnail(
+                        $image,
+                        $file_path,
+                        $size_name,
+                        $dest_width,
+                        $dest_height,
+                        $webp_path,
+                        $original_extension,
+                        $width && $height,
+                        $quality
+                    );
+                    $metadata['sizes'][$size_name] = [
+                        'file' => basename($webp_path),
+                        'webp' => basename($webp_path),
+                        'width' => $dest_width,
+                        'height' => $dest_height,
+                        'extension' => 'webp',
+                    ];
+                }
+            } else {
+                // Generate thumbnails in original format (JPEG/PNG/GIF)
+                if (!isset($metadata['sizes'][$size_name]) || !file_exists($orig_ext_path)) {
+                    self::generate_original_thumbnail(
+                        $image,
+                        $file_path,
+                        $size_name,
+                        $dest_width,
+                        $dest_height,
+                        $orig_ext_path,
+                        $original_extension,
+                        $width && $height,
+                        $quality
+                    );
+
+                    $metadata['sizes'][$size_name] = [
+                        'file' => basename($orig_ext_path),
+                        'width' => $dest_width,
+                        'height' => $dest_height,
+                        'extension' => $original_extension,
+                    ];
+                }
             }
         }
 
@@ -144,16 +187,16 @@ class ThumbnailGenerator
      */
     private static function load_image($file_path, $extension)
     {
-        if (!WebPSupport::is_webp_supported()) {
-            Logger::log("WebP not supported, skipping Intervention Image");
-            return null;
-        }
-
         try {
             // Choose driver based on available PHP extensions
-            $driver = (function_exists('imagewebp') && extension_loaded('gd')) ?
-                new GdDriver() :
-                new ImagickDriver();
+            if (extension_loaded('gd')) {
+                $driver = new GdDriver();
+            } elseif (extension_loaded('imagick') && class_exists('Imagick')) {
+                $driver = new ImagickDriver();
+            } else {
+                Logger::log('No GD or Imagick available for Intervention Image');
+                return null;
+            }
 
             $manager = new ImageManager($driver);
             $image = $manager->read($file_path);
@@ -166,7 +209,7 @@ class ThumbnailGenerator
     }
 
     /**
-     * Generate a single thumbnail
+     * Generate a single WebP thumbnail
      *
      * @param ImageInterface $image Image object
      * @param string $file_path Original file path
@@ -176,9 +219,10 @@ class ThumbnailGenerator
      * @param string $webp_path WebP file path
      * @param string $original_extension Original file extension
      * @param bool $crop Whether to crop
+     * @param int $quality Image quality (60-100)
      * @return void
      */
-    private static function generate_thumbnail($image, $file_path, $size_name, $dest_width, $dest_height, $webp_path, $original_extension, $crop = false)
+    private static function generate_thumbnail($image, $file_path, $size_name, $dest_width, $dest_height, $webp_path, $original_extension, $crop = false, $quality = 85)
     {
         // Check if using Intervention Image 3.x
         if (!$image instanceof ImageInterface) {
@@ -195,14 +239,76 @@ class ThumbnailGenerator
                     $resized = $image->scale($dest_width, $dest_height);
                 }
 
-                // Save as WebP
-                $resized->toWebp(Config::WEBP_QUALITY)->save($webp_path);
-                Logger::log("Generated thumbnail via Intervention 3.x: $size_name, webp=$webp_path");
+                // Save as WebP with quality
+                $resized->toWebp($quality)->save($webp_path);
+                Logger::log("Generated thumbnail via Intervention 3.x: $size_name, webp=$webp_path, quality=$quality");
                 return;
             } catch (\Exception $e) {
                 Logger::log("Intervention thumbnail generation failed: " . $e->getMessage());
                 return;
             }
+        }
+    }
+
+    /**
+     * Generate a single thumbnail in original format
+     *
+     * @param ImageInterface $image Image object
+     * @param string $file_path Original file path
+     * @param string $size_name Size name
+     * @param int $dest_width Destination width
+     * @param int $dest_height Destination height
+     * @param string $dest_path Destination file path (original extension)
+     * @param string $original_extension Original file extension
+     * @param bool $crop Whether to crop
+     * @param int $quality Image quality (60-100)
+     * @return void
+     */
+    private static function generate_original_thumbnail($image, $file_path, $size_name, $dest_width, $dest_height, $dest_path, $original_extension, $crop = false, $quality = 85)
+    {
+        if (!$image instanceof ImageInterface) {
+            Logger::log("Invalid image object for original thumbnail generation");
+            return;
+        }
+
+        try {
+            // Resize
+            if ($crop) {
+                $resized = $image->cover($dest_width, $dest_height);
+            } else {
+                $resized = $image->scale($dest_width, $dest_height);
+            }
+
+            $ext = strtolower($original_extension);
+            switch ($ext) {
+                case 'jpg':
+                case 'jpeg':
+                    $resized->toJpeg($quality)->save($dest_path);
+                    break;
+                case 'png':
+                    // Indexed palette PNG; compression level has negligible impact when indexed
+                    // toPng(interlaced: bool, indexed: bool, bitDepth: ?int)
+                    $resized->toPng(false, true, 8)->save($dest_path);
+                    break;
+                case 'gif':
+                    // Save as GIF (note: may be single frame)
+                    $resized->toGif()->save($dest_path);
+                    break;
+                case 'webp':
+                    // Fallback safety: if original is webp but webp disabled, still save webp
+                    $resized->toWebp($quality)->save($dest_path);
+                    break;
+                default:
+                    // Default to JPEG if unknown
+                    $fallback = preg_replace('/\.[^.]+$/', '.jpg', $dest_path);
+                    $resized->toJpeg($quality)->save($fallback);
+                    $dest_path = $fallback;
+                    break;
+            }
+
+            Logger::log("Generated original-format thumbnail: $size_name => $dest_path");
+        } catch (\Exception $e) {
+            Logger::log("Original thumbnail generation failed: " . $e->getMessage());
         }
     }
 

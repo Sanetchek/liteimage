@@ -17,13 +17,13 @@ delete_option('liteimage_settings');
 
 // Delete all transients
 global $wpdb;
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Uninstall cleanup requires direct DB access
 $wpdb->query(
     "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_liteimage_%' OR option_name LIKE '_transient_timeout_liteimage_%'"
 );
 
 // Optionally delete logs (users might want to keep them)
 // Uncomment the following lines if you want to delete logs on uninstall
-/*
 $upload_dir = wp_upload_dir();
 $log_dir = $upload_dir['basedir'] . '/liteimage-logs/';
 
@@ -38,12 +38,10 @@ if (file_exists($log_dir)) {
     // Delete log directory and all files
     $wp_filesystem->rmdir($log_dir, true);
 }
-*/
 
 // Optional: Remove LiteImage thumbnails
 // This is commented out by default to avoid data loss
 // Uncomment if you want to clean up thumbnails on uninstall
-/*
 $images = get_posts([
     'post_type' => 'attachment',
     'post_mime_type' => 'image',
@@ -83,10 +81,9 @@ foreach ($images as $image_id) {
     }
 
     // Remove LiteImage sizes from metadata
-    $metadata['sizes'] = array_filter($metadata['sizes'], function($size) {
+    $metadata['sizes'] = array_filter($metadata['sizes'], function ($size) {
         return strpos($size, 'liteimage-') !== 0;
     }, ARRAY_FILTER_USE_KEY);
 
     wp_update_attachment_metadata($image_id, $metadata);
 }
-*/

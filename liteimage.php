@@ -3,7 +3,7 @@
 /*
 Plugin Name: LiteImage
 Description: Optimizes images with dynamic thumbnails, WebP support, and accessibility.
-Version: 3.2.0
+Version: 3.2.1
 Author: Oleksandr Gryshko
 Author URI: https://github.com/Sanetchek
 Text Domain: liteimage
