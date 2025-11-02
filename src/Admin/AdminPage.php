@@ -258,7 +258,7 @@ class AdminPage
                         <?php
                         if (!$webp_available) {
                             echo '<div style="color:#d23b1a;margin:5px 0 0 0;font-size:0.98em;">';
-                            esc_html_e('WebP conversion is not available on your server. Install or enable GD, Imagick or the "cwebp" CLI tool for this functionality.', 'liteimage');
+                            esc_html_e('WebP conversion is not available on your server. Install or enable GD or Imagick extension for this functionality.', 'liteimage');
                             echo ' <a href="?page=liteimage-settings&tab=webp" style="margin-left:8px;font-size:0.97em;">' . esc_html__('Show details', 'liteimage') . '</a>';
                             echo '</div>';
                         }
@@ -300,7 +300,7 @@ class AdminPage
                 if (WebPSupport::is_webp_supported()) {
                     esc_html_e('WebP supported via GD or Imagick.', 'liteimage');
                 } else {
-                    esc_html_e('WebP conversion unavailable. Enable GD, Imagick or CLI cwebp support for optimal performance.', 'liteimage');
+                    esc_html_e('WebP conversion unavailable. Enable GD or Imagick extension for optimal performance.', 'liteimage');
                 }
                 ?>
             </p>
@@ -371,11 +371,6 @@ class AdminPage
             if (in_array('WEBP', $i->queryFormats('WEBP'))) {
                 return true;
             }
-        }
-        // cwebp (CLI)
-        @exec('cwebp -version', $out, $result);
-        if ($result === 0) {
-            return true;
         }
         return false;
     }
