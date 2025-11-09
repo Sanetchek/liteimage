@@ -224,13 +224,14 @@ class LiteImageBlock
             );
 
             wp_set_script_translations(self::HANDLE_EDITOR_SCRIPT, 'liteimage', trailingslashit(LITEIMAGE_DIR) . 'languages');
-        } else {
-            wp_register_script(
-                self::HANDLE_EDITOR_SCRIPT,
-                '',
-                $asset_dependencies,
-                '1.0.0'
-            );
+		} else {
+			wp_register_script(
+				self::HANDLE_EDITOR_SCRIPT,
+				'',
+				$asset_dependencies,
+				'1.0.0',
+				true
+			);
         }
     }
 
@@ -345,11 +346,15 @@ class LiteImageBlock
      */
     private static function sanitize_text(string $value): string
     {
-        if (function_exists('sanitize_text_field')) {
-            return sanitize_text_field($value);
-        }
+		if (function_exists('sanitize_text_field')) {
+			return sanitize_text_field($value);
+		}
 
-        return trim(strip_tags($value));
+		if (function_exists('wp_strip_all_tags')) {
+			return trim(wp_strip_all_tags($value));
+		}
+
+		return trim($value);
     }
 
     /**

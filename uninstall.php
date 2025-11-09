@@ -24,10 +24,11 @@ $wpdb->query(
 
 // Optionally delete logs (users might want to keep them)
 // Uncomment the following lines if you want to delete logs on uninstall
-$upload_dir = wp_upload_dir();
-$log_dir = $upload_dir['basedir'] . '/liteimage-logs/';
+$liteimage_upload_data = wp_upload_dir();
+$liteimage_upload_base = isset($liteimage_upload_data['basedir']) ? rtrim($liteimage_upload_data['basedir'], '/\\') : '';
+$liteimage_log_dir = $liteimage_upload_base !== '' ? $liteimage_upload_base . '/liteimage-logs/' : '';
 
-if (file_exists($log_dir)) {
+if ($liteimage_log_dir !== '' && file_exists($liteimage_log_dir)) {
     // Load WordPress filesystem
     if (!function_exists('WP_Filesystem')) {
         require_once ABSPATH . 'wp-admin/includes/file.php';
@@ -35,55 +36,58 @@ if (file_exists($log_dir)) {
     WP_Filesystem();
     global $wp_filesystem;
 
-    // Delete log directory and all files
-    $wp_filesystem->rmdir($log_dir, true);
+	// Delete log directory and all files
+	$wp_filesystem->rmdir($liteimage_log_dir, true);
 }
 
 // Optional: Remove LiteImage thumbnails
 // This is commented out by default to avoid data loss
 // Uncomment if you want to clean up thumbnails on uninstall
-$images = get_posts([
+$liteimage_attachment_ids = get_posts([
     'post_type' => 'attachment',
     'post_mime_type' => 'image',
     'numberposts' => -1,
     'fields' => 'ids',
 ]);
 
-foreach ($images as $image_id) {
-    $metadata = wp_get_attachment_metadata($image_id);
-    if (!$metadata || !isset($metadata['sizes'])) {
+foreach ($liteimage_attachment_ids as $liteimage_attachment_id) {
+	$liteimage_metadata = wp_get_attachment_metadata($liteimage_attachment_id);
+	if (!$liteimage_metadata || !isset($liteimage_metadata['sizes'])) {
         continue;
     }
 
-    $upload_dir = wp_upload_dir()['basedir'];
-    $base_path = $upload_dir . '/' . dirname($metadata['file']);
+	if ($liteimage_upload_base === '') {
+		continue;
+	}
 
-    foreach ($metadata['sizes'] as $size => $data) {
-        if (strpos($size, 'liteimage-') !== 0) {
+	$liteimage_base_path = $liteimage_upload_base . '/' . dirname($liteimage_metadata['file']);
+
+	foreach ($liteimage_metadata['sizes'] as $liteimage_size_key => $liteimage_size_data) {
+		if (strpos($liteimage_size_key, 'liteimage-') !== 0) {
             continue;
         }
 
         // Delete thumbnail file
-        if (isset($data['file'])) {
-            $file = $base_path . '/' . $data['file'];
-            if (file_exists($file)) {
-                wp_delete_file($file);
+		if (isset($liteimage_size_data['file'])) {
+			$liteimage_file_path = $liteimage_base_path . '/' . $liteimage_size_data['file'];
+			if (file_exists($liteimage_file_path)) {
+				wp_delete_file($liteimage_file_path);
             }
         }
 
         // Delete WebP file
-        if (isset($data['webp'])) {
-            $webp = $base_path . '/' . $data['webp'];
-            if (file_exists($webp)) {
-                wp_delete_file($webp);
+		if (isset($liteimage_size_data['webp'])) {
+			$liteimage_webp_path = $liteimage_base_path . '/' . $liteimage_size_data['webp'];
+			if (file_exists($liteimage_webp_path)) {
+				wp_delete_file($liteimage_webp_path);
             }
         }
     }
 
     // Remove LiteImage sizes from metadata
-    $metadata['sizes'] = array_filter($metadata['sizes'], function ($size) {
-        return strpos($size, 'liteimage-') !== 0;
+	$liteimage_metadata['sizes'] = array_filter($liteimage_metadata['sizes'], function ($liteimage_size_key) {
+		return strpos($liteimage_size_key, 'liteimage-') !== 0;
     }, ARRAY_FILTER_USE_KEY);
 
-    wp_update_attachment_metadata($image_id, $metadata);
+	wp_update_attachment_metadata($liteimage_attachment_id, $liteimage_metadata);
 }

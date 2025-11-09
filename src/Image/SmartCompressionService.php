@@ -12,6 +12,7 @@ namespace LiteImage\Image;
 use Intervention\Image\Interfaces\EncodedImageInterface;
 use Intervention\Image\Interfaces\ImageInterface;
 use LiteImage\Admin\Settings;
+use LiteImage\Support\Filesystem;
 use LiteImage\Support\Logger;
 
 defined('ABSPATH') || exit;
@@ -500,15 +501,18 @@ class SmartCompressionService
     /**
      * Commit candidate file to destination.
      */
-    private function commitCandidate(string $candidatePath, string $destination): void
-    {
-        if (!@rename($candidatePath, $destination)) {
-            if (!@copy($candidatePath, $destination)) {
-                throw new \RuntimeException('SmartCompressionService: unable to move optimized file to destination.');
-            }
-            @unlink($candidatePath);
-        }
-    }
+	private function commitCandidate(string $candidatePath, string $destination): void
+	{
+		$filesystem = Filesystem::instance();
+
+		if (!$filesystem->move($candidatePath, $destination, true)) {
+			if (!$filesystem->copy($candidatePath, $destination, true)) {
+				throw new \RuntimeException('SmartCompressionService: unable to move optimized file to destination.');
+			}
+
+			Filesystem::deleteFile($candidatePath);
+		}
+	}
 
     /**
      * Cleanup temporary files.
@@ -518,12 +522,12 @@ class SmartCompressionService
     private function cleanupTemp(array $paths): void
     {
         foreach ($paths as $path) {
-            if (!$path) {
+			if (!$path) {
                 continue;
             }
-            if (is_file($path)) {
-                @unlink($path);
-            }
+			if (is_file($path)) {
+				Filesystem::deleteFile($path);
+			}
         }
     }
 

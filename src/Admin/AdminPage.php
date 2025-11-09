@@ -395,9 +395,9 @@ class AdminPage
         }
         echo '</ul>';
 
-        if (!empty($summary['upscaled_count'])) {
-            echo '<p style="margin-top:12px;">' . sprintf(
-                // translators: %s: number of retina variants upscaled beyond the source dimensions.
+		if (!empty($summary['upscaled_count'])) {
+			echo '<p style="margin-top:12px;">' . sprintf(
+                /* translators: %s: number of retina variants upscaled beyond the source dimensions. */
                 esc_html__('%s retina variants were upscaled beyond the source dimensions.', 'liteimage'),
                 esc_html(number_format_i18n((int) $summary['upscaled_count']))
             ) . '</p>';
@@ -432,9 +432,9 @@ class AdminPage
             $lastSize = isset($lastEvent['bytes']) ? size_format((float) $lastEvent['bytes'], 2) : __('n/a', 'liteimage');
             $lastTime = isset($lastEvent['timestamp']) ? human_time_diff($lastEvent['timestamp'], time()) : __('n/a', 'liteimage');
 
-            echo '<p style="margin-top:20px;font-size:0.95em;opacity:0.8;">' .
-                sprintf(
-                    // translators: 1: human-readable time since last run, 2: image format, 3: quality value, 4: file size in bytes.
+			echo '<p style="margin-top:20px;font-size:0.95em;opacity:0.8;">' .
+				sprintf(
+                    /* translators: 1: relative time since last run, 2: image format, 3: quality value, 4: file size in bytes. */
                     esc_html__('Last run: %1$s ago · %2$s · quality %3$s · %4$s bytes', 'liteimage'),
                     esc_html($lastTime),
                     esc_html(strtoupper((string) ($lastEvent['format'] ?? ''))),

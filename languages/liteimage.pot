@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-11-09T12:03:05+02:00\n"
+"POT-Creation-Date: 2025-11-09T13:17:48+02:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: liteimage\n"
@@ -64,12 +64,12 @@ msgid "General"
 msgstr ""
 
 #: src/Admin/AdminPage.php:182
-#: src/Admin/AdminPage.php:513
+#: src/Admin/AdminPage.php:515
 msgid "Savings & Reports"
 msgstr ""
 
 #: src/Admin/AdminPage.php:183
-#: src/Admin/AdminPage.php:554
+#: src/Admin/AdminPage.php:556
 msgid "WebP Status"
 msgstr ""
 
@@ -177,11 +177,11 @@ msgstr ""
 #: src/Admin/AdminPage.php:375
 #: src/Admin/AdminPage.php:376
 #: src/Admin/AdminPage.php:378
-#: src/Admin/AdminPage.php:414
-#: src/Admin/AdminPage.php:417
-#: src/Admin/AdminPage.php:431
+#: src/Admin/AdminPage.php:415
+#: src/Admin/AdminPage.php:418
 #: src/Admin/AdminPage.php:432
 #: src/Admin/AdminPage.php:433
+#: src/Admin/AdminPage.php:434
 msgid "n/a"
 msgstr ""
 
@@ -210,235 +210,235 @@ msgid "Strategy usage"
 msgstr ""
 
 #. translators: %s: number of retina variants upscaled beyond the source dimensions.
-#: src/Admin/AdminPage.php:401
+#: src/Admin/AdminPage.php:400
 #, php-format
 msgid "%s retina variants were upscaled beyond the source dimensions."
 msgstr ""
 
-#: src/Admin/AdminPage.php:407
+#: src/Admin/AdminPage.php:408
 msgid "Format breakdown"
 msgstr ""
 
-#: src/Admin/AdminPage.php:409
+#: src/Admin/AdminPage.php:410
 msgid "Format"
 msgstr ""
 
-#: src/Admin/AdminPage.php:409
+#: src/Admin/AdminPage.php:410
 msgid "Runs"
 msgstr ""
 
-#: src/Admin/AdminPage.php:409
+#: src/Admin/AdminPage.php:410
 msgid "Avg quality"
 msgstr ""
 
-#: src/Admin/AdminPage.php:409
+#: src/Admin/AdminPage.php:410
 msgid "Avg savings"
 msgstr ""
 
-#. translators: 1: human-readable time since last run, 2: image format, 3: quality value, 4: file size in bytes.
+#. translators: 1: relative time since last run, 2: image format, 3: quality value, 4: file size in bytes.
 #: src/Admin/AdminPage.php:438
 #, php-format
 msgid "Last run: %1$s ago · %2$s · quality %3$s · %4$s bytes"
 msgstr ""
 
-#: src/Admin/AdminPage.php:545
+#: src/Admin/AdminPage.php:547
 msgid "All uploaded images"
 msgstr ""
 
-#: src/Admin/AdminPage.php:547
+#: src/Admin/AdminPage.php:549
 msgid "Images total"
 msgstr ""
 
-#: src/Admin/AdminPage.php:548
+#: src/Admin/AdminPage.php:550
 msgid "Total originals size"
 msgstr ""
 
-#: src/Admin/AdminPage.php:562
+#: src/Admin/AdminPage.php:564
 msgid "WebP is supported on this server!"
 msgstr ""
 
-#: src/Admin/AdminPage.php:564
+#: src/Admin/AdminPage.php:566
 msgid "You are using fast and modern WebP optimization. All compatible browsers receive WebP thumbnails automatically."
 msgstr ""
 
-#: src/Admin/AdminPage.php:566
+#: src/Admin/AdminPage.php:568
 msgid "WebP not supported!"
 msgstr ""
 
-#: src/Admin/AdminPage.php:567
+#: src/Admin/AdminPage.php:569
 msgid "Your server PHP must have either the GD or Imagick extension enabled for WebP support."
 msgstr ""
 
-#: src/Admin/AdminPage.php:570
-#: src/Admin/AdminPage.php:574
+#: src/Admin/AdminPage.php:572
+#: src/Admin/AdminPage.php:576
 msgid "Not available"
 msgstr ""
 
-#: src/Admin/AdminPage.php:577
+#: src/Admin/AdminPage.php:579
 msgid "To enable WebP, install and enable GD/Imagick. On Ubuntu:"
 msgstr ""
 
-#: src/Admin/AdminPage.php:582
+#: src/Admin/AdminPage.php:584
 msgid "After installing, restart your web server and revisit this settings page."
 msgstr ""
 
-#: src/Admin/AdminPage.php:587
+#: src/Admin/AdminPage.php:589
 msgid "Imagick diagnostics"
 msgstr ""
 
-#: src/Admin/AdminPage.php:589
+#: src/Admin/AdminPage.php:591
 msgid "Imagick extension is not available. PSNR-based smart compression will rely on filesize heuristics."
 msgstr ""
 
-#: src/Admin/AdminPage.php:591
+#: src/Admin/AdminPage.php:593
 msgid "Imagick detected but initialization failed:"
 msgstr ""
 
-#: src/Admin/AdminPage.php:595
+#: src/Admin/AdminPage.php:597
 msgid "Imagick version"
 msgstr ""
 
-#: src/Admin/AdminPage.php:595
+#: src/Admin/AdminPage.php:597
 msgid "Unknown"
 msgstr ""
 
-#: src/Admin/AdminPage.php:596
+#: src/Admin/AdminPage.php:598
 msgid "PSNR metric available"
 msgstr ""
 
-#: src/Admin/AdminPage.php:596
+#: src/Admin/AdminPage.php:598
 msgid "Yes"
 msgstr ""
 
-#: src/Admin/AdminPage.php:596
+#: src/Admin/AdminPage.php:598
 msgid "No"
 msgstr ""
 
-#: src/Admin/AdminPage.php:597
+#: src/Admin/AdminPage.php:599
 msgid "WebP read/write"
 msgstr ""
 
-#: src/Admin/AdminPage.php:597
+#: src/Admin/AdminPage.php:599
 msgid "Supported"
 msgstr ""
 
-#: src/Admin/AdminPage.php:597
+#: src/Admin/AdminPage.php:599
 msgid "Not supported"
 msgstr ""
 
-#: src/Admin/AdminPage.php:599
+#: src/Admin/AdminPage.php:601
 msgid "Delegates"
 msgstr ""
 
-#: src/Admin/AdminPage.php:602
+#: src/Admin/AdminPage.php:604
 msgid "Sample formats"
 msgstr ""
 
-#: src/Admin/AdminPage.php:608
+#: src/Admin/AdminPage.php:610
 msgid "Imagick is available but PSNR comparison is missing. Smart compression will use filesize heuristics instead of visual metrics."
 msgstr ""
 
-#: src/Admin/AdminPage.php:610
+#: src/Admin/AdminPage.php:612
 msgid "Imagick is available but does not list WebP in its format registry. Ensure WebP delegates are installed to unlock Imagick-based conversions."
 msgstr ""
 
-#: src/Admin/AdminPage.php:612
+#: src/Admin/AdminPage.php:614
 msgid "Imagick is ready for PSNR-based smart compression and WebP generation."
 msgstr ""
 
-#: src/Admin/AdminPage.php:625
+#: src/Admin/AdminPage.php:627
 msgid "How to use LiteImage"
 msgstr ""
 
-#: src/Admin/AdminPage.php:627
+#: src/Admin/AdminPage.php:629
 msgid "The"
 msgstr ""
 
-#: src/Admin/AdminPage.php:627
+#: src/Admin/AdminPage.php:629
 msgid "function generates responsive images with WebP support if available, falling back to JPEG/PNG if not. Use it in your theme or templates to optimize image delivery."
 msgstr ""
 
-#: src/Admin/AdminPage.php:628
+#: src/Admin/AdminPage.php:630
 msgid "Function Syntax"
 msgstr ""
 
-#: src/Admin/AdminPage.php:630
+#: src/Admin/AdminPage.php:632
 msgid "Parameters"
 msgstr ""
 
-#: src/Admin/AdminPage.php:632
+#: src/Admin/AdminPage.php:634
 msgid "The ID of the image attachment from the Media Library."
 msgstr ""
 
-#: src/Admin/AdminPage.php:633
+#: src/Admin/AdminPage.php:635
 msgid "Configuration options for image rendering:"
 msgstr ""
 
-#: src/Admin/AdminPage.php:635
+#: src/Admin/AdminPage.php:637
 msgid "Default size (e.g., \"full\" or [width, height], default [1920, 0])."
 msgstr ""
 
-#: src/Admin/AdminPage.php:636
+#: src/Admin/AdminPage.php:638
 msgid "HTML attributes for the <img> tag (e.g., [\"class\" => \"my-image\", \"alt\" => \"Description\"])."
 msgstr ""
 
-#: src/Admin/AdminPage.php:637
+#: src/Admin/AdminPage.php:639
 msgid "Min-width media queries (e.g., [\"768\" => [1920, 0]])."
 msgstr ""
 
-#: src/Admin/AdminPage.php:638
+#: src/Admin/AdminPage.php:640
 msgid "Max-width media queries (e.g., [\"767\" => [768, 480]])."
 msgstr ""
 
-#: src/Admin/AdminPage.php:640
+#: src/Admin/AdminPage.php:642
 msgid "Optional ID for a mobile-specific image (used for screens < 768px)."
 msgstr ""
 
-#: src/Admin/AdminPage.php:642
+#: src/Admin/AdminPage.php:644
 msgid "Tips for Optimal Use"
 msgstr ""
 
-#: src/Admin/AdminPage.php:644
+#: src/Admin/AdminPage.php:646
 msgid "Use specific thumbnail sizes to reduce server load and improve performance."
 msgstr ""
 
-#: src/Admin/AdminPage.php:645
+#: src/Admin/AdminPage.php:647
 msgid "Enable WebP support by ensuring GD or Imagick supports WebP for faster image loading."
 msgstr ""
 
-#: src/Admin/AdminPage.php:646
+#: src/Admin/AdminPage.php:648
 msgid "Clear thumbnails periodically to remove unused sizes and save disk space."
 msgstr ""
 
-#: src/Admin/AdminPage.php:647
+#: src/Admin/AdminPage.php:649
 msgid "Add accessibility attributes like \"alt\" and \"aria-label\" in the args array for better SEO and usability."
 msgstr ""
 
-#: src/Admin/AdminPage.php:664
+#: src/Admin/AdminPage.php:666
 msgid "Support the Developer"
 msgstr ""
 
-#: src/Admin/AdminPage.php:665
+#: src/Admin/AdminPage.php:667
 msgid "Enjoying LiteImage? Support its development with a Bitcoin (BTC chain) donation!"
 msgstr ""
 
-#: src/Admin/AdminPage.php:674
+#: src/Admin/AdminPage.php:676
 msgid "Buy Me a Coffee (BTC)"
 msgstr ""
 
-#: src/Admin/AdminPage.php:678
+#: src/Admin/AdminPage.php:680
 msgid "Copied!"
 msgstr ""
 
-#: src/Admin/AdminPage.php:680
+#: src/Admin/AdminPage.php:682
 msgid "Send donations to this Bitcoin address (BTC chain): 1NDUzCkYvKE5qHZnfR9f71NrXL2DJCAVpn"
 msgstr ""
 
-#: src/Admin/AdminPage.php:694
+#: src/Admin/AdminPage.php:696
 msgid "Thumbnail Sizes"
 msgstr ""
 
-#: src/Admin/AdminPage.php:720
+#: src/Admin/AdminPage.php:722
 msgid "No thumbnails"
 msgstr ""
 

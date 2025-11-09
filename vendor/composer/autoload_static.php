@@ -439,6 +439,7 @@ class ComposerStaticInit2a579b17ed14bedcbcf6458d55c577eb
         'LiteImage\\Image\\ThumbnailCleaner' => __DIR__ . '/../..' . '/src/Image/ThumbnailCleaner.php',
         'LiteImage\\Image\\ThumbnailGenerator' => __DIR__ . '/../..' . '/src/Image/ThumbnailGenerator.php',
         'LiteImage\\Plugin' => __DIR__ . '/../..' . '/src/Plugin.php',
+        'LiteImage\\Support\\Filesystem' => __DIR__ . '/../..' . '/src/Support/Filesystem.php',
         'LiteImage\\Support\\Logger' => __DIR__ . '/../..' . '/src/Support/Logger.php',
         'LiteImage\\Support\\WebPSupport' => __DIR__ . '/../..' . '/src/Support/WebPSupport.php',
     );

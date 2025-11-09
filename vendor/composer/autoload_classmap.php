@@ -411,6 +411,7 @@ return array(
     'LiteImage\\Image\\ThumbnailCleaner' => $baseDir . '/src/Image/ThumbnailCleaner.php',
     'LiteImage\\Image\\ThumbnailGenerator' => $baseDir . '/src/Image/ThumbnailGenerator.php',
     'LiteImage\\Plugin' => $baseDir . '/src/Plugin.php',
+    'LiteImage\\Support\\Filesystem' => $baseDir . '/src/Support/Filesystem.php',
     'LiteImage\\Support\\Logger' => $baseDir . '/src/Support/Logger.php',
     'LiteImage\\Support\\WebPSupport' => $baseDir . '/src/Support/WebPSupport.php',
 );
