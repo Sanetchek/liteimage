@@ -175,7 +175,7 @@ class AdminPage
         $rate_limit_key_liteimage = 'liteimage_cleanup_liteimage_' . $user_id;
         $rate_limit_key_wp = 'liteimage_cleanup_wp_' . $user_id;
 
-        // Таб навигация (4 flat таба)
+        // Tab navigation (4 flat tabs)
         $allowed_tabs = ['general', 'stats', 'webp', 'usage'];
         $tab_labels = [
             'general' => __('General', 'liteimage'),

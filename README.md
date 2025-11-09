@@ -121,24 +121,24 @@ liteimage(int $image_id, array $data = [], int|null $mobile_image_id = null)
 
 ### Gutenberg Block
 
-- Добавьте блок **LiteImage Image** в редакторе Гутенберга.
-- Укажите настольное и, при необходимости, мобильное изображение.
-- Настройте размеры по умолчанию и произвольные брейкпоинты (*min-width* / *max-width*), соответствующие размерам изображений.
-- Добавляйте любые HTML-атрибуты (`class`, `data-*`, `aria-*`, `loading`, `decoding`, и т.д.).
-- Плагин автоматически генерирует ретина-версии (@2x) для всех источников и собирает корректный `srcset`.
-- Сохраненный блок использует ту же логику рендера, что и функция `liteimage()`, поэтому сохраняется единое поведение на фронтенде.
+- Add a **LiteImage Image**block in the Gutenberg editor.
+- Specify a desktop and, if necessary, a mobile image.
+- Set default sizes and custom breakpoints (*min-width*/*max-width*) to match your image sizes.
+- Add any HTML attributes (`class`, `data-*`, `aria-*`, `loading`, `decoding`, etc.).
+- The plugin automatically generates retina versions (@2x) for all sources and assembles the correct `srcset`.
+- The saved block uses the same rendering logic as the `liteimage()` function, so it maintains consistent behavior on the frontend.
 
-### Проверка ретина-изображений (ручной smoke-тест)
+### Checking retina images (manual smoke test)
 
-1. Включите плагин и загрузите изображение с любым расширением (JPEG/PNG/WebP).
-2. Включите опцию **Generate WebP thumbnails** (если доступна) и сохраните настройки.
-3. Вставьте изображение через `liteimage($attachment_id, ['thumb' => [1024, 0]])`.
-4. Откройте страницу с включённым `WP_DEBUG` и в консоли браузера запустите:
+1. Enable the plugin and upload an image with any extension (JPEG/PNG/WebP).
+2. Enable the **Generate WebP thumbnails**option (if available) and save the settings.
+3. Insert an image via `liteimage($attachment_id, ['thumb' => [1024, 0]])`.
+4. Open a page with `WP_DEBUG` enabled and in the browser console run:
    ```js
    [...document.querySelectorAll('picture img')].forEach((img) => console.log(img.currentSrc, img.srcset));
    ```
-5. Убедитесь, что для каждого `<source>` и `<img>` присутствует `srcset` вида `... 1x, ... 2x`, а файлы с суффиксом `@2x` создаются даже для изображений меньше исходного.
-6. Очистите миниатюры через инструмент LiteImage Cleanup и проверьте, что файлы `@2x` удаляются из папки загрузок.
+5. Make sure that for each `<source>` and `<img>` there is a `srcset` of the form `... 1x, ... 2x`, and that files with the `@2x` suffix are created even for images smaller than the original.
+6. Clean up your thumbnails using the LiteImage Cleanup tool and check that the `@2x` files are removed from your downloads folder.
 
 ## 🎛️ Settings
 
