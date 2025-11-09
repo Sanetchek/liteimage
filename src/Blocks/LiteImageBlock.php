@@ -42,13 +42,22 @@ class LiteImageBlock
         self::register_assets();
 
         if (function_exists('register_block_type_from_metadata')) {
-            register_block_type_from_metadata(
+            $result = register_block_type_from_metadata(
                 $block_dir,
                 [
                     'render_callback' => [self::class, 'render_block'],
                 ]
             );
-            return;
+
+            if ($result && (!function_exists('is_wp_error') || !is_wp_error($result))) {
+                return;
+            }
+
+            Logger::log([
+                'context' => 'LiteImageBlock::register',
+                'event' => 'register_block_type_from_metadata_failed',
+                'result' => $result,
+            ]);
         }
 
         $metadata = json_decode(file_get_contents($block_dir . '/block.json'), true);

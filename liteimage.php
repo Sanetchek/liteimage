@@ -34,7 +34,7 @@ use LiteImage\Image\Renderer;
 
 // Constants
 define('LITEIMAGE_DIR', plugin_dir_path(__FILE__));
-define('LITEIMAGE_LOG_ACTIVE', true);
+define('LITEIMAGE_LOG_ACTIVE', false);
 
 // Register activation/deactivation hooks
 register_activation_hook(__FILE__, ['LiteImage\Plugin', 'activate']);
