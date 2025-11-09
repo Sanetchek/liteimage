@@ -5,6 +5,32 @@ All notable changes to LiteImage will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0] - 2025-11-07
+
+> **🚀 Feature Release: Gutenberg Block & Brand Refresh**
+>
+> Introduces the LiteImage Gutenberg block, bringing all responsive rendering controls directly into the block editor, along with an updated visual identity.
+
+### ✨ Added
+
+- **Gutenberg Block**: New `LiteImage Image` block with desktop/mobile image sources, breakpoint management (min/max widths), and unlimited HTML attributes powered by the existing renderer.
+- **Retina Automation**: Automatic generation and registration of 1x/2x image variants for all LiteImage outputs, including Gutenberg block renders.
+- **Testing**: Added a PHPUnit smoke test ensuring block attribute sanitization before rendering.
+
+### 🔄 Changed
+
+- **Documentation**: Updated README and Block usage guidance for the new editor flow.
+- **Branding**: Refreshed plugin icon/logo assets to align with the latest brand palette.
+
+### Technical Details
+
+- `src/Blocks/LiteImageBlock.php` – Block registration, sanitization helpers, and render delegation.
+- `assets/js/block.js` – Editor UI for configuring responsive breakpoints and attributes.
+- `src/Image/Renderer.php`, `src/Image/ThumbnailGenerator.php` – Extended to ensure 1x/2x variants are generated and wired into responsive markup.
+- `blocks/liteimage/block.json` – Updated block metadata and icon.
+- `tests/Blocks/LiteImageBlockTest.php` – New PHPUnit coverage.
+- `README.md`, `readme.txt` – Documentation updates for Gutenberg workflow and retina automation.
+
 ## [3.2.1] - 2025-10-31
 
 > **🔧 Patch Release: WordPress.org Plugin Check Compliance**
@@ -370,6 +396,7 @@ This release addresses all issues from WordPress.org plugin review:
 - WebP support
 - Basic admin interface
 
+[3.3.0]: https://github.com/Sanetchek/liteimage/compare/v3.2.1...v3.3.0
 [3.2.1]: https://github.com/Sanetchek/liteimage/compare/v3.2.0...v3.2.1
 [3.2.0]: https://github.com/Sanetchek/liteimage/compare/v3.1.0...v3.2.0
 [3.1.0]: https://github.com/Sanetchek/liteimage/compare/v2.1.0...v3.1.0

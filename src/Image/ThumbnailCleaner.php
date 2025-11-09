@@ -64,12 +64,15 @@ class ThumbnailCleaner
 
                         $base_path = $upload_dir . '/' . dirname($metadata['file']);
 
+                        $is_retina = !empty($data['is_retina']) || (strpos($size, '@2x') !== false);
+                        $label = $is_retina ? 'LiteImage retina thumbnail' : 'LiteImage thumbnail';
+
                         if ($data['file']) {
                             $file = $base_path . '/' . $data['file'];
                             if (file_exists($file)) {
                                 wp_delete_file($file);
                                 $deleted_count++;
-                                Logger::log("Deleted LiteImage thumbnail: $file for {$image_id}");
+                                Logger::log("Deleted {$label}: $file for {$image_id}");
                             }
                         }
 
@@ -78,7 +81,7 @@ class ThumbnailCleaner
                             if (file_exists($webp)) {
                                 wp_delete_file($webp);
                                 $deleted_count++;
-                                Logger::log("Deleted LiteImage WebP: $webp for {$image_id}");
+                                Logger::log("Deleted {$label} (WebP): $webp for {$image_id}");
                             }
                         }
                     }
@@ -141,12 +144,15 @@ class ThumbnailCleaner
                             continue; // Skip LiteImage thumbnails
                         }
 
+                        $is_retina = !empty($data['is_retina']) || (strpos($size, '@2x') !== false);
+                        $label = $is_retina ? 'WordPress retina thumbnail' : 'WordPress thumbnail';
+
                         if ($data['file']) {
                             $file = $base_path . '/' . $data['file'];
                             if (file_exists($file)) {
                                 wp_delete_file($file);
                                 $deleted_count++;
-                                Logger::log("Deleted WordPress thumbnail: $file for {$image_id}");
+                                Logger::log("Deleted {$label}: $file for {$image_id}");
                             }
                         }
 
@@ -155,7 +161,7 @@ class ThumbnailCleaner
                             if (file_exists($webp)) {
                                 wp_delete_file($webp);
                                 $deleted_count++;
-                                Logger::log("Deleted WordPress WebP: $webp for {$image_id}");
+                                Logger::log("Deleted {$label} (WebP): $webp for {$image_id}");
                             }
                         }
                     }
@@ -172,7 +178,8 @@ class ThumbnailCleaner
                 $residual_files = glob($pattern, GLOB_BRACE);
                 if ($residual_files) {
                     foreach ($residual_files as $file) {
-                        if (strpos(basename($file), Config::THUMBNAIL_PREFIX) === false) {
+                        $basename = basename($file);
+                        if (strpos($basename, Config::THUMBNAIL_PREFIX) === false) {
                             if (file_exists($file)) {
                                 wp_delete_file($file);
                                 $deleted_count++;

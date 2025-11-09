@@ -70,6 +70,14 @@ class Renderer
      */
     public function render()
     {
+        Logger::log([
+            'context' => 'Renderer::render',
+            'event' => 'start',
+            'image_id' => $this->image_id,
+            'mobile_image_id' => $this->mobile_image_id,
+            'data' => $this->data,
+        ]);
+
         if (!$this->image_id) {
             Logger::log("Invalid image ID: {$this->image_id}");
             return '';
@@ -80,17 +88,41 @@ class Renderer
             Logger::log("Missing file path for image ID: {$this->image_id}");
             return '';
         }
+        Logger::log([
+            'context' => 'Renderer::render',
+            'event' => 'desktop_file_resolved',
+            'image_id' => $this->image_id,
+            'path' => $file_path_desktop,
+        ]);
 
         $orig_ext_desktop = strtolower(pathinfo($file_path_desktop, PATHINFO_EXTENSION));
         $file_path_mobile = ($this->mobile_image_id && $this->mobile_image_id !== $this->image_id)
             ? get_attached_file($this->mobile_image_id)
             : null;
         $orig_ext_mobile = $file_path_mobile ? strtolower(pathinfo($file_path_mobile, PATHINFO_EXTENSION)) : null;
+        Logger::log([
+            'context' => 'Renderer::render',
+            'event' => 'mobile_file_resolved',
+            'mobile_image_id' => $this->mobile_image_id,
+            'path' => $file_path_mobile,
+        ]);
 
         // Fast path: vector/modern formats we don't process
         if (in_array($orig_ext_desktop, ['svg', 'avif'], true)) {
+            Logger::log([
+                'context' => 'Renderer::render',
+                'event' => 'using_simple_renderer',
+                'extension' => $orig_ext_desktop,
+            ]);
             return $this->render_simple_image($orig_ext_desktop);
         }
+
+        Logger::log([
+            'context' => 'Renderer::render',
+            'event' => 'using_picture_renderer',
+            'desktop_extension' => $orig_ext_desktop,
+            'mobile_extension' => $orig_ext_mobile,
+        ]);
 
         return $this->render_picture_element(
             $file_path_desktop,
@@ -165,6 +197,14 @@ class Renderer
         $min = $this->get_array_value($this->data, 'min', []);
         $max = $this->get_array_value($this->data, 'max', []);
 
+        Logger::log([
+            'context' => 'Renderer::render_picture_element',
+            'event' => 'inputs',
+            'thumb' => $thumb,
+            'min_breakpoints' => $min,
+            'max_breakpoints' => $max,
+        ]);
+
         if (!is_array($min)) {
             $min = [];
         }
@@ -197,12 +237,31 @@ class Renderer
             }
         }
 
+        Logger::log([
+            'context' => 'Renderer::render_picture_element',
+            'event' => 'thumbnail_plan',
+            'desktop_sizes' => $sizes_to_generate_desktop,
+            'mobile_sizes' => $sizes_to_generate_mobile,
+        ]);
+
         // Generate thumbnails
         if (!empty($sizes_to_generate_desktop)) {
             ThumbnailGenerator::generate_thumbnails($this->image_id, $file_path_desktop, $sizes_to_generate_desktop);
+            Logger::log([
+                'context' => 'Renderer::render_picture_element',
+                'event' => 'desktop_thumbnails_generated',
+                'image_id' => $this->image_id,
+                'count' => count($sizes_to_generate_desktop),
+            ]);
         }
         if ($file_path_mobile && !empty($sizes_to_generate_mobile)) {
             ThumbnailGenerator::generate_thumbnails($this->mobile_image_id, $file_path_mobile, $sizes_to_generate_mobile);
+            Logger::log([
+                'context' => 'Renderer::render_picture_element',
+                'event' => 'mobile_thumbnails_generated',
+                'image_id' => $this->mobile_image_id,
+                'count' => count($sizes_to_generate_mobile),
+            ]);
         }
 
         // Refresh metadata
@@ -210,6 +269,13 @@ class Renderer
         $metadata_mobile = ($this->mobile_image_id && $this->mobile_image_id !== $this->image_id)
             ? $this->get_attachment_metadata($this->mobile_image_id)
             : null;
+
+        Logger::log([
+            'context' => 'Renderer::render_picture_element',
+            'event' => 'metadata_loaded',
+            'has_desktop_metadata' => !empty($metadata_desktop),
+            'has_mobile_metadata' => !empty($metadata_mobile),
+        ]);
 
         return $this->build_picture(
             $min,
@@ -250,8 +316,16 @@ class Renderer
         ], $args);
 
         // Get fallback image with filter
-        $filter_callback = function ($attr) {
-            unset($attr['srcset'], $attr['sizes']);
+        list($fallback_variants, $fallback_image) = $this->collect_density_variants($this->image_id, $thumb_size_name);
+        $fallback_srcset = $this->format_srcset($fallback_variants);
+
+        $filter_callback = function ($attr) use ($fallback_srcset) {
+            if ($fallback_srcset !== '') {
+                $attr['srcset'] = $fallback_srcset;
+                unset($attr['sizes']);
+            } else {
+                unset($attr['srcset'], $attr['sizes']);
+            }
             return $attr;
         };
 
@@ -271,6 +345,11 @@ class Renderer
 
         foreach ($sets as $type => $breakpoints) {
             if (empty($breakpoints) || !is_array($breakpoints)) {
+                Logger::log([
+                    'context' => 'Renderer::build_picture',
+                    'event' => 'skip_empty_breakpoints',
+                    'type' => $type,
+                ]);
                 continue;
             }
 
@@ -293,14 +372,28 @@ class Renderer
                 $current_orig_ext = $use_mobile ? $orig_ext_mobile : $orig_ext_desktop;
 
                 if (!$current_meta) {
+                    Logger::log([
+                        'context' => 'Renderer::build_picture',
+                        'event' => 'missing_metadata',
+                        'type' => $type,
+                        'width' => $width,
+                        'use_mobile' => $use_mobile,
+                    ]);
                     continue;
                 }
 
                 list($dest_width, $dest_height) = $this->downsize($output_image_id, $dim);
                 $size_name = Config::THUMBNAIL_PREFIX . "{$dest_width}x{$dest_height}";
 
-                $source_image = wp_get_attachment_image_src($output_image_id, $size_name);
-                if (!$source_image) {
+                list($density_variants, $source_image) = $this->collect_density_variants($output_image_id, $size_name);
+                if (!$source_image || empty($source_image[0])) {
+                    Logger::log([
+                        'context' => 'Renderer::build_picture',
+                        'event' => 'missing_source_image',
+                        'type' => $type,
+                        'width' => $width,
+                        'size_name' => $size_name,
+                    ]);
                     continue;
                 }
 
@@ -315,14 +408,21 @@ class Renderer
                 $media = '(' . ($type === 'min' ? 'min' : 'max') . '-width: ' . esc_attr($width) . 'px)';
 
                 if (!empty($size_metadata['webp'])) {
-                    $webp_filename = $size_metadata['webp'];
-                    $webp_url = str_replace(basename($source_image[0]), $webp_filename, $source_image[0]);
-                    $output .= '<source media="' . $media . '" srcset="' . esc_url($webp_url) . '" type="image/webp">';
+                    $webp_srcset = $this->format_srcset($density_variants);
+                    if ($webp_srcset !== '') {
+                        $output .= '<source media="' . $media . '" srcset="' . esc_attr($webp_srcset) . '" type="image/webp">';
+                    }
                     if ($type_attr !== 'image/webp') {
-                        $output .= '<source media="' . $media . '" srcset="' . esc_url($source_image[0]) . '" type="' . esc_attr($type_attr) . '">';
+                        $standard_srcset = $this->format_srcset($density_variants);
+                        if ($standard_srcset !== '') {
+                            $output .= '<source media="' . $media . '" srcset="' . esc_attr($standard_srcset) . '" type="' . esc_attr($type_attr) . '">';
+                        }
                     }
                 } else {
-                    $output .= '<source media="' . $media . '" srcset="' . esc_url($source_image[0]) . '" type="' . esc_attr($type_attr) . '">';
+                    $standard_srcset = $this->format_srcset($density_variants);
+                    if ($standard_srcset !== '') {
+                        $output .= '<source media="' . $media . '" srcset="' . esc_attr($standard_srcset) . '" type="' . esc_attr($type_attr) . '">';
+                    }
                 }
             }
         }
@@ -330,7 +430,66 @@ class Renderer
         $output .= $fallback_img;
         $output .= '</picture>';
 
+        Logger::log([
+            'context' => 'Renderer::build_picture',
+            'event' => 'build_complete',
+            'fallback_srcset' => $fallback_srcset,
+        ]);
+
         return $output;
+    }
+
+    /**
+     * Collect density variants (1x/2x) for a given size
+     *
+     * @param int $attachment_id Attachment ID
+     * @param string $size_name Size name
+     * @return array Array with [variants, base_image]
+     */
+    private function collect_density_variants($attachment_id, $size_name)
+    {
+        $base_image = wp_get_attachment_image_src($attachment_id, $size_name);
+        if (!$base_image || empty($base_image[0])) {
+            return [[], null];
+        }
+
+        $variants = [[
+            'url' => $base_image[0],
+            'descriptor' => '1x',
+        ]];
+
+        $retina_image = wp_get_attachment_image_src($attachment_id, $size_name . '@2x');
+        if ($retina_image && !empty($retina_image[0])) {
+            $variants[] = [
+                'url' => $retina_image[0],
+                'descriptor' => '2x',
+            ];
+        }
+
+        return [$variants, $base_image];
+    }
+
+    /**
+     * Build a srcset string from density variants
+     *
+     * @param array $variants Array of ['url' => string, 'descriptor' => string]
+     * @return string Srcset attribute contents
+     */
+    private function format_srcset(array $variants)
+    {
+        if (empty($variants)) {
+            return '';
+        }
+
+        $parts = [];
+        foreach ($variants as $variant) {
+            if (empty($variant['url']) || empty($variant['descriptor'])) {
+                continue;
+            }
+            $parts[] = esc_url($variant['url']) . ' ' . $variant['descriptor'];
+        }
+
+        return implode(', ', $parts);
     }
 
     /**

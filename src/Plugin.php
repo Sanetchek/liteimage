@@ -11,6 +11,7 @@ namespace LiteImage;
 
 use LiteImage\Admin\AdminPage;
 use LiteImage\Admin\Settings;
+use LiteImage\Blocks\LiteImageBlock;
 
 defined('ABSPATH') || exit;
 
@@ -33,7 +34,7 @@ class Plugin
      *
      * @var string
      */
-    const VERSION = '3.2.1';
+    const VERSION = '3.3.0';
 
     /**
      * Constructor
@@ -76,6 +77,8 @@ class Plugin
     {
         // Initialize settings
         Settings::get_instance();
+
+        add_action('init', [LiteImageBlock::class, 'register']);
 
         // Initialize admin
         if (is_admin()) {

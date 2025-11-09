@@ -1,0 +1,50 @@
+{
+  "apiVersion": 2,
+  "name": "liteimage/image",
+  "title": "LiteImage Image",
+  "category": "media",
+  "icon": "camera",
+  "description": "Responsive image block powered by LiteImage renderer with full breakpoint control.",
+  "textdomain": "liteimage",
+  "supports": {
+    "html": false,
+    "align": ["wide", "full"]
+  },
+  "keywords": [
+    "image",
+    "responsive",
+    "liteimage"
+  ],
+  "attributes": {
+    "desktopImageId": {
+      "type": "number",
+      "default": 0
+    },
+    "mobileImageId": {
+      "type": "number",
+      "default": 0
+    },
+    "thumb": {
+      "type": "object",
+      "default": {
+        "width": 0,
+        "height": 0
+      }
+    },
+    "htmlAttributes": {
+      "type": "array",
+      "default": []
+    },
+    "breakpoints": {
+      "type": "array",
+      "default": []
+    },
+    "breakpointMode": {
+      "type": "string",
+      "default": "min",
+      "enum": ["min", "max"]
+    }
+  },
+  "editorScript": "liteimage-block-editor"
+}
+

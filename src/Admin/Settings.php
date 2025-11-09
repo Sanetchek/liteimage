@@ -9,6 +9,10 @@
 
 namespace LiteImage\Admin;
 
+use function add_filter;
+use function get_option;
+use function update_option;
+
 defined('ABSPATH') || exit;
 
 /**
@@ -18,6 +22,13 @@ defined('ABSPATH') || exit;
  */
 class Settings
 {
+    public const DEFAULT_THUMBNAIL_QUALITY = 82;
+    public const DEFAULT_SMART_COMPRESSION_ENABLED = true;
+    public const DEFAULT_SMART_MIN_QUALITY = 80;
+    public const DEFAULT_SMART_TARGET_PSNR = 44.5;
+    public const DEFAULT_SMART_MAX_ITERATIONS = 6;
+    public const DEFAULT_SMART_MIN_SAVINGS_PERCENT = 4.0;
+
     /**
      * Singleton instance
      *
@@ -37,20 +48,30 @@ class Settings
      */
     private function __construct()
     {
-        $this->settings = get_option('liteimage_settings', [
+        $this->settings = \get_option('liteimage_settings', [
             'disable_thumbnails' => false,
             'show_donation' => true,
             'convert_to_webp' => true,
-            'thumbnail_quality' => 85,
+            'thumbnail_quality' => self::DEFAULT_THUMBNAIL_QUALITY,
+            'smart_compression_enabled' => self::DEFAULT_SMART_COMPRESSION_ENABLED,
+            'smart_target_psnr' => self::DEFAULT_SMART_TARGET_PSNR,
+            'smart_min_quality' => self::DEFAULT_SMART_MIN_QUALITY,
+            'smart_max_iterations' => self::DEFAULT_SMART_MAX_ITERATIONS,
+            'smart_min_savings_percent' => self::DEFAULT_SMART_MIN_SAVINGS_PERCENT,
         ]);
-        if (!isset($this->settings['convert_to_webp'])) {
-            $this->settings['convert_to_webp'] = true;
-        }
-        if (!isset($this->settings['thumbnail_quality']) || !is_numeric($this->settings['thumbnail_quality'])) {
-            $this->settings['thumbnail_quality'] = 85;
-        }
+        $this->settings['disable_thumbnails'] = !empty($this->settings['disable_thumbnails']);
+        $this->settings['show_donation'] = !empty($this->settings['show_donation']);
+        $this->settings['convert_to_webp'] = !empty($this->settings['convert_to_webp']);
+        $this->settings['thumbnail_quality'] = self::DEFAULT_THUMBNAIL_QUALITY;
+        $this->settings['smart_compression_enabled'] = isset($this->settings['smart_compression_enabled'])
+            ? (bool) $this->settings['smart_compression_enabled']
+            : self::DEFAULT_SMART_COMPRESSION_ENABLED;
+        $this->settings['smart_target_psnr'] = self::DEFAULT_SMART_TARGET_PSNR;
+        $this->settings['smart_min_quality'] = self::DEFAULT_SMART_MIN_QUALITY;
+        $this->settings['smart_max_iterations'] = self::DEFAULT_SMART_MAX_ITERATIONS;
+        $this->settings['smart_min_savings_percent'] = self::DEFAULT_SMART_MIN_SAVINGS_PERCENT;
         if ($this->settings['disable_thumbnails']) {
-            add_filter('intermediate_image_sizes_advanced', '__return_empty_array');
+            \add_filter('intermediate_image_sizes_advanced', '__return_empty_array');
         }
     }
 
@@ -97,24 +118,27 @@ class Settings
      */
     public function save()
     {
-        return update_option('liteimage_settings', $this->settings);
+        return \update_option('liteimage_settings', $this->settings);
     }
 
     public static function sanitize_settings($input)
     {
-        // Filter/validate thumbnail quality
-        $quality = isset($input['thumbnail_quality']) && is_numeric($input['thumbnail_quality']) ? intval($input['thumbnail_quality']) : 85;
-        if ($quality < 60) {
-            $quality = 60;
-        }
-        if ($quality > 100) {
-            $quality = 100;
-        }
+        $existing = \get_option('liteimage_settings', []);
+        $smartCompressionEnabled = array_key_exists('smart_compression_enabled', $input)
+            ? !empty($input['smart_compression_enabled'])
+            : (isset($existing['smart_compression_enabled'])
+                ? (bool) $existing['smart_compression_enabled']
+                : self::DEFAULT_SMART_COMPRESSION_ENABLED);
         return [
             'disable_thumbnails' => !empty($input['disable_thumbnails']),
             'show_donation' => !empty($input['show_donation']),
-            'convert_to_webp' => isset($input['convert_to_webp']) && $input['convert_to_webp'] ? true : false,
-            'thumbnail_quality' => $quality,
+            'convert_to_webp' => !empty($input['convert_to_webp']),
+            'thumbnail_quality' => self::DEFAULT_THUMBNAIL_QUALITY,
+            'smart_compression_enabled' => $smartCompressionEnabled,
+            'smart_target_psnr' => self::DEFAULT_SMART_TARGET_PSNR,
+            'smart_min_quality' => self::DEFAULT_SMART_MIN_QUALITY,
+            'smart_max_iterations' => self::DEFAULT_SMART_MAX_ITERATIONS,
+            'smart_min_savings_percent' => self::DEFAULT_SMART_MIN_SAVINGS_PERCENT,
         ];
     }
 }

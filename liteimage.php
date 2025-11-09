@@ -3,7 +3,7 @@
 /*
 Plugin Name: LiteImage
 Description: Optimizes images with dynamic thumbnails, WebP support, and accessibility.
-Version: 3.2.1
+Version: 3.3.0
 Author: Oleksandr Gryshko
 Author URI: https://github.com/Sanetchek
 Text Domain: liteimage
@@ -34,7 +34,7 @@ use LiteImage\Image\Renderer;
 
 // Constants
 define('LITEIMAGE_DIR', plugin_dir_path(__FILE__));
-define('LITEIMAGE_LOG_ACTIVE', false);
+define('LITEIMAGE_LOG_ACTIVE', true);
 
 // Register activation/deactivation hooks
 register_activation_hook(__FILE__, ['LiteImage\Plugin', 'activate']);

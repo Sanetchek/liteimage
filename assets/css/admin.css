@@ -116,6 +116,13 @@
   display: flex;
   gap: 12px;
 }
+.liteimage-stat-grid {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
 /* Responsive tweaks */
 @media (max-width: 600px) {
   .liteimage-flex-row { flex-direction: column; gap: 14px; }

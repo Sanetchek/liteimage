@@ -2,7 +2,7 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: LiteImage 3.2.1\n"
+"Project-Id-Version: LiteImage 3.3.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/liteimage\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -186,33 +186,6 @@ msgstr ""
 msgid "Total originals size"
 msgstr ""
 
-#: src/Admin/AdminPage.php:479
-msgid "LiteImage-optimized subset"
-msgstr ""
-
-#: src/Admin/AdminPage.php:481
-msgid "Originals with LiteImage"
-msgstr ""
-
-#: src/Admin/AdminPage.php:482
-msgid "Originals size (subset)"
-msgstr ""
-
-#: src/Admin/AdminPage.php:483
-msgid "Optimized thumbnails size"
-msgstr ""
-
-#: src/Admin/AdminPage.php:484
-msgid "Space saved vs originals"
-msgstr ""
-
-#: src/Admin/AdminPage.php:489
-msgid "relative saved storage for the subset"
-msgstr ""
-
-#: src/Admin/AdminPage.php:490
-msgid "If your site used only originals, storage usage for these items would be higher by the shown difference."
-msgstr ""
 
 #: src/Admin/AdminPage.php:503
 msgid "WebP is supported on this server!"

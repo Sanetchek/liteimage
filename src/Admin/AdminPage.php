@@ -10,6 +10,7 @@
 namespace LiteImage\Admin;
 
 use LiteImage\Config;
+use LiteImage\Image\SmartCompressionTelemetry;
 use LiteImage\Image\ThumbnailCleaner;
 use LiteImage\Support\WebPSupport;
 
@@ -137,12 +138,7 @@ class AdminPage
      */
     public static function sanitize_settings($input)
     {
-        return [
-            'disable_thumbnails' => !empty($input['disable_thumbnails']),
-            'show_donation' => !empty($input['show_donation']),
-            'convert_to_webp' => isset($input['convert_to_webp']) && $input['convert_to_webp'] ? true : false,
-            'thumbnail_quality' => intval($input['thumbnail_quality']),
-        ];
+        return Settings::sanitize_settings($input);
     }
 
     /**
@@ -232,13 +228,6 @@ class AdminPage
         $webp_available = self::is_webp_supported_anywhere();
         $settings = Settings::get_instance();
         $webp_enabled = $settings->get('convert_to_webp');
-        $quality = intval($settings->get('thumbnail_quality'));
-        if ($quality < 60) {
-            $quality = 60;
-        }
-        if ($quality > 100) {
-            $quality = 100;
-        }
         ?>
         <h2><?php esc_html_e('General Settings', 'liteimage'); ?></h2>
         <form method="post" action="options.php">
@@ -266,15 +255,6 @@ class AdminPage
                         <p class="description">
                             <?php esc_html_e('WebP thumbnails save space and load faster for users on modern browsers.', 'liteimage'); ?>
                         </p>
-                    </td>
-                </tr>
-                <tr>
-                    <th scope="row"><?php esc_html_e('Thumbnail Quality', 'liteimage'); ?></th>
-                    <td>
-                        <input type="number" name="liteimage_settings[thumbnail_quality]" value="<?php echo esc_attr($quality); ?>" min="60" max="100" step="1" style="width:70px;"> <span style="margin-left:7px;font-weight:500;">/ 100</span>
-                        <div style="margin-top:5px;font-size:0.96em;opacity:0.82;">
-                            <?php esc_html_e('Recommended: 80-90. Higher value means better image quality but larger file size. Applies to JPEG, PNG and WebP.', 'liteimage'); ?>
-                        </div>
                     </td>
                 </tr>
                 <tr>
@@ -375,10 +355,163 @@ class AdminPage
         return false;
     }
 
+    /**
+     * Render smart compression telemetry metrics.
+     *
+     * @param array<string,mixed> $summary
+     * @return void
+     */
+    private static function render_compression_metrics(array $summary)
+    {
+        echo '<div class="liteimage-card liteimage-card--metrics">';
+        echo '<h3>' . esc_html__('Smart Compression Metrics', 'liteimage') . '</h3>';
+
+        if (empty($summary['total_operations'])) {
+            echo '<p>' . esc_html__('No smart compression operations recorded yet. Generate thumbnails to populate these statistics.', 'liteimage') . '</p>';
+            echo '</div>';
+            return;
+        }
+
+        $avgQuality = $summary['average_quality'] !== null ? number_format_i18n((float) $summary['average_quality'], 1) : __('n/a', 'liteimage');
+        $avgSavings = $summary['average_savings_percent'] !== null ? number_format_i18n((float) $summary['average_savings_percent'], 2) . '%' : __('n/a', 'liteimage');
+        $avgIterations = number_format_i18n((float) $summary['average_iterations'], 2);
+        $avgPsnr = $summary['average_psnr'] !== null ? number_format_i18n((float) $summary['average_psnr'], 2) . ' dB' : __('n/a', 'liteimage');
+
+        echo '<div class="liteimage-stat-grid">';
+        echo '<div class="liteimage-stat"><span class="liteimage-stat-num">' . esc_html(number_format_i18n((int) $summary['total_operations'])) . '</span><br>' . esc_html__('Optimized variants', 'liteimage') . '</div>';
+        echo '<div class="liteimage-stat"><span class="liteimage-stat-num">' . esc_html($avgQuality) . '</span><br>' . esc_html__('Average quality', 'liteimage') . '</div>';
+        echo '<div class="liteimage-stat"><span class="liteimage-stat-num">' . esc_html($avgSavings) . '</span><br>' . esc_html__('Average savings', 'liteimage') . '</div>';
+        echo '<div class="liteimage-stat"><span class="liteimage-stat-num">' . esc_html($avgIterations) . '</span><br>' . esc_html__('Iterations per run', 'liteimage') . '</div>';
+        echo '<div class="liteimage-stat"><span class="liteimage-stat-num">' . esc_html($avgPsnr) . '</span><br>' . esc_html__('Average PSNR', 'liteimage') . '</div>';
+        echo '</div>';
+
+        $strategies = isset($summary['strategies']) && is_array($summary['strategies']) ? $summary['strategies'] : [];
+        $formats = isset($summary['formats']) && is_array($summary['formats']) ? $summary['formats'] : [];
+
+        echo '<h4 style="margin-top:20px;">' . esc_html__('Strategy usage', 'liteimage') . '</h4>';
+        echo '<ul class="liteimage-strategy-list">';
+        foreach ($strategies as $strategy => $count) {
+            echo '<li><strong>' . esc_html(ucfirst($strategy)) . ':</strong> ' . esc_html(number_format_i18n((int) $count)) . '</li>';
+        }
+        echo '</ul>';
+
+        if (!empty($summary['upscaled_count'])) {
+            echo '<p style="margin-top:12px;">' . sprintf(
+                esc_html__('%s retina variants were upscaled beyond the source dimensions.', 'liteimage'),
+                esc_html(number_format_i18n((int) $summary['upscaled_count']))
+            ) . '</p>';
+        }
+
+        if (!empty($formats)) {
+            echo '<h4 style="margin-top:20px;">' . esc_html__('Format breakdown', 'liteimage') . '</h4>';
+            echo '<table class="widefat striped" style="max-width:560px;">';
+            echo '<thead><tr><th>' . esc_html__('Format', 'liteimage') . '</th><th>' . esc_html__('Runs', 'liteimage') . '</th><th>' . esc_html__('Avg quality', 'liteimage') . '</th><th>' . esc_html__('Avg savings', 'liteimage') . '</th></tr></thead><tbody>';
+            foreach ($formats as $format => $data) {
+                $formatCount = number_format_i18n((int) ($data['count'] ?? 0));
+                $formatQuality = isset($data['average_quality']) && $data['average_quality'] !== null
+                    ? number_format_i18n((float) $data['average_quality'], 1)
+                    : __('n/a', 'liteimage');
+                $formatSavings = isset($data['average_savings_percent']) && $data['average_savings_percent'] !== null
+                    ? number_format_i18n((float) $data['average_savings_percent'], 2) . '%'
+                    : __('n/a', 'liteimage');
+
+                echo '<tr>';
+                echo '<td>' . esc_html(strtoupper($format)) . '</td>';
+                echo '<td>' . esc_html($formatCount) . '</td>';
+                echo '<td>' . esc_html($formatQuality) . '</td>';
+                echo '<td>' . esc_html($formatSavings) . '</td>';
+                echo '</tr>';
+            }
+            echo '</tbody></table>';
+        }
+
+        if (!empty($summary['last_event'])) {
+            $lastEvent = $summary['last_event'];
+            $lastQuality = isset($lastEvent['quality']) && $lastEvent['quality'] !== null ? number_format_i18n((int) $lastEvent['quality']) : __('n/a', 'liteimage');
+            $lastSize = isset($lastEvent['bytes']) ? size_format((float) $lastEvent['bytes'], 2) : __('n/a', 'liteimage');
+            $lastTime = isset($lastEvent['timestamp']) ? human_time_diff($lastEvent['timestamp'], time()) : __('n/a', 'liteimage');
+
+            echo '<p style="margin-top:20px;font-size:0.95em;opacity:0.8;">' .
+                sprintf(
+                    esc_html__('Last run: %1$s ago · %2$s · quality %3$s · %4$s bytes', 'liteimage'),
+                    esc_html($lastTime),
+                    esc_html(strtoupper((string) ($lastEvent['format'] ?? ''))),
+                    esc_html($lastQuality),
+                    esc_html($lastSize)
+                ) .
+                '</p>';
+        }
+
+        echo '</div>';
+    }
+
+    /**
+     * Inspect Imagick capabilities for the WebP status tab.
+     *
+     * @return array<string,mixed>
+     */
+    private static function get_imagick_capabilities(): array
+    {
+        $available = extension_loaded('imagick') && class_exists('Imagick');
+        $caps = [
+            'available' => $available,
+            'version' => null,
+            'psnr_supported' => false,
+            'webp_supported' => false,
+            'delegates' => [],
+            'sample_formats' => [],
+            'error' => null,
+        ];
+
+        if (!$available) {
+            return $caps;
+        }
+
+        try {
+            $versionInfo = \Imagick::getVersion();
+            if (is_array($versionInfo) && isset($versionInfo['versionString'])) {
+                $caps['version'] = $versionInfo['versionString'];
+                if (preg_match('/Delegates(?:\\s*:?\\s*)([A-Za-z0-9_\\s]+)/', $versionInfo['versionString'], $matches)) {
+                    $caps['delegates'] = array_filter(array_map('trim', preg_split('/\\s+/', $matches[1])));
+                }
+            } else {
+                $caps['version'] = phpversion('imagick') ?: null;
+            }
+
+            $caps['psnr_supported'] = method_exists('\Imagick', 'compareImages');
+
+            $imagick = new \Imagick();
+            $formatsToProbe = ['WEBP', 'JPEG', 'JPG', 'PNG', 'GIF', 'TIFF', 'SVG', 'AVIF', 'HEIC', 'PDF'];
+            $supported = [];
+            foreach ($formatsToProbe as $format) {
+                try {
+                    $results = $imagick->queryFormats($format);
+                    if (!empty($results)) {
+                        $supported[] = strtoupper($format);
+                    }
+                } catch (\Throwable $formatException) {
+                    continue;
+                }
+            }
+            $caps['sample_formats'] = $supported;
+            $caps['webp_supported'] = in_array('WEBP', $supported, true);
+
+            $imagick->clear();
+            $imagick->destroy();
+        } catch (\Throwable $exception) {
+            $caps['error'] = $exception->getMessage();
+        }
+
+        return $caps;
+    }
+
     // New tab placeholders:
     private static function display_stats_tab_content()
     {
         echo '<h2 class="liteimage-section-header">' . esc_html__('Savings & Reports', 'liteimage') . '</h2>';
+
+        $telemetrySummary = SmartCompressionTelemetry::get_summary();
+        self::render_compression_metrics($telemetrySummary);
 
         // 1) Collect all images in the media library
         $args = array(
@@ -389,17 +522,8 @@ class AdminPage
         );
         $attachments = get_posts($args);
 
-        $uploads = wp_upload_dir();
-        $uploads_basedir = isset($uploads['basedir']) ? $uploads['basedir'] : '';
-
         $all_count = 0;                // all images (originals)
         $all_bytes = 0;                // total weight of all originals
-
-        // 2) Subset: only those with liteimage-thumbnails
-        $li_items = 0;                 // number of originals with LiteImage thumbnails
-        $li_orig_bytes = 0;            // total weight of originals in this subset
-        $li_optimized_bytes = 0;       // total weight of all LiteImage files (webp+orig)
-        $li_thumbs_count = 0;          // number of thumbnail files (for reference)
 
         foreach ($attachments as $id) {
             $file_abs = get_attached_file($id);
@@ -407,53 +531,7 @@ class AdminPage
                 $all_count++;
                 $all_bytes += (int) filesize($file_abs);
             }
-
-            $meta = wp_get_attachment_metadata($id);
-            if (empty($meta) || empty($meta['sizes'])) {
-                continue;
-            }
-
-            $base_rel = isset($meta['file']) ? dirname($meta['file']) : '';
-            $base_dir = rtrim($uploads_basedir . '/' . ltrim($base_rel, '/'), '/');
-
-            $has_li = false;
-            $optimized_bytes_for_item = 0;
-            $thumbs_for_item = 0;
-
-            foreach ($meta['sizes'] as $size_name => $data) {
-                if (strpos($size_name, 'liteimage-') !== 0) {
-                    continue;
-                }
-                $has_li = true;
-                if (!empty($data['file'])) {
-                    $p = $base_dir . '/' . $data['file'];
-                    if (file_exists($p)) {
-                        $optimized_bytes_for_item += (int) filesize($p);
-                        $thumbs_for_item++;
-                    }
-                }
-                if (!empty($data['webp'])) {
-                    $p = $base_dir . '/' . $data['webp'];
-                    if (file_exists($p)) {
-                        $optimized_bytes_for_item += (int) filesize($p);
-                        $thumbs_for_item++;
-                    }
-                }
-            }
-
-            if ($has_li) {
-                if ($file_abs && file_exists($file_abs)) {
-                    $li_items++;
-                    $li_orig_bytes += (int) filesize($file_abs);
-                }
-                $li_optimized_bytes += $optimized_bytes_for_item;
-                $li_thumbs_count += $thumbs_for_item;
-            }
         }
-
-        // Savings for the LiteImage subset
-        $li_saved_bytes = max(0, $li_orig_bytes - $li_optimized_bytes);
-        $li_saved_pct = $li_orig_bytes > 0 ? round(100 * $li_saved_bytes / $li_orig_bytes) : 0;
 
         // Formatting numbers in MB
         $fmt = function ($bytes) {
@@ -468,23 +546,6 @@ class AdminPage
         echo '<div class="liteimage-stat"><span class="liteimage-stat-num">' . esc_html($fmt($all_bytes)) . ' MB</span><br>' . esc_html__('Total originals size', 'liteimage') . '</div>';
         echo '</div>';
         echo '</div>';
-
-        echo '<div class="liteimage-card">';
-        // Second block: only items with LiteImage thumbnails
-        echo '<h3 style="margin-top:0">' . esc_html__('LiteImage-optimized subset', 'liteimage') . '</h3>';
-        echo '<div class="liteimage-stats">';
-        echo '<div class="liteimage-stat"><span class="liteimage-stat-num">' . esc_html($li_items) . '</span><br>' . esc_html__('Originals with LiteImage', 'liteimage') . '</div>';
-        echo '<div class="liteimage-stat"><span class="liteimage-stat-num">' . esc_html($fmt($li_orig_bytes)) . ' MB</span><br>' . esc_html__('Originals size (subset)', 'liteimage') . '</div>';
-        echo '<div class="liteimage-stat"><span class="liteimage-stat-num">' . esc_html($fmt($li_optimized_bytes)) . ' MB</span><br>' . esc_html__('Optimized thumbnails size', 'liteimage') . '</div>';
-        echo '<div class="liteimage-stat"><span class="liteimage-stat-num">' . esc_html($fmt($li_saved_bytes)) . ' MB</span><br>' . esc_html__('Space saved vs originals', 'liteimage') . '</div>';
-        echo '</div>';
-
-        echo '<div style="max-width:520px;margin-top:18px">';
-        echo '<div class="liteimage-progress"><div class="liteimage-progress-bar" style="width:' . esc_attr($li_saved_pct) . '%;"></div></div>';
-        echo '<div style="margin-top:8px;opacity:0.85;font-size:1.08em">' . esc_html($li_saved_pct) . '% ' . esc_html__('relative saved storage for the subset', 'liteimage') . ' (' . esc_html($fmt($li_saved_bytes)) . ' MB / ' . esc_html($fmt($li_orig_bytes)) . ' MB)</div>';
-        echo '<div style="margin-top:10px;opacity:0.9">' . esc_html__('If your site used only originals, storage usage for these items would be higher by the shown difference.', 'liteimage') . '</div>';
-        echo '</div>';
-        echo '</div>';
     }
     private static function display_webp_tab_content()
     {
@@ -492,6 +553,7 @@ class AdminPage
         $supported = \LiteImage\Support\WebPSupport::is_webp_supported();
         $gd = extension_loaded('gd') && function_exists('imagewebp');
         $imagick = extension_loaded('imagick') && class_exists('Imagick');
+        $imagick_caps = self::get_imagick_capabilities();
 
         if ($supported) {
             $engine = $gd ? 'GD' : ($imagick ? 'Imagick' : 'Unknown');
@@ -518,6 +580,37 @@ sudo service php7.4-fpm restart</pre>';
             echo esc_html__('After installing, restart your web server and revisit this settings page.', 'liteimage');
             echo '</div>';
         }
+
+        echo '<div class="liteimage-card" style="margin-top:24px;">';
+        echo '<h3 style="margin-top:0;">' . esc_html__('Imagick diagnostics', 'liteimage') . '</h3>';
+        if (!$imagick_caps['available']) {
+            echo '<p>' . esc_html__('Imagick extension is not available. PSNR-based smart compression will rely on filesize heuristics.', 'liteimage') . '</p>';
+        } elseif (!empty($imagick_caps['error'])) {
+            echo '<p style="color:#b93c0b;">' . esc_html__('Imagick detected but initialization failed:', 'liteimage') . ' ' . esc_html($imagick_caps['error']) . '</p>';
+        } else {
+            echo '<table class="widefat striped" style="max-width:540px;margin-bottom:14px;">';
+            echo '<tbody>';
+            echo '<tr><th style="width:190px;">' . esc_html__('Imagick version', 'liteimage') . '</th><td>' . esc_html($imagick_caps['version'] ?? __('Unknown', 'liteimage')) . '</td></tr>';
+            echo '<tr><th>' . esc_html__('PSNR metric available', 'liteimage') . '</th><td>' . ($imagick_caps['psnr_supported'] ? '<span style="color:#0a7b1e;">' . esc_html__('Yes', 'liteimage') . '</span>' : '<span style="color:#b93c0b;">' . esc_html__('No', 'liteimage') . '</span>') . '</td></tr>';
+            echo '<tr><th>' . esc_html__('WebP read/write', 'liteimage') . '</th><td>' . ($imagick_caps['webp_supported'] ? '<span style="color:#0a7b1e;">' . esc_html__('Supported', 'liteimage') . '</span>' : '<span style="color:#b93c0b;">' . esc_html__('Not supported', 'liteimage') . '</span>') . '</td></tr>';
+            if (!empty($imagick_caps['delegates'])) {
+                echo '<tr><th>' . esc_html__('Delegates', 'liteimage') . '</th><td>' . esc_html(implode(', ', $imagick_caps['delegates'])) . '</td></tr>';
+            }
+            if (!empty($imagick_caps['sample_formats'])) {
+                echo '<tr><th>' . esc_html__('Sample formats', 'liteimage') . '</th><td>' . esc_html(implode(', ', $imagick_caps['sample_formats'])) . '</td></tr>';
+            }
+            echo '</tbody>';
+            echo '</table>';
+
+            if (!$imagick_caps['psnr_supported']) {
+                echo '<p style="margin-top:12px;color:#b93c0b;">' . esc_html__('Imagick is available but PSNR comparison is missing. Smart compression will use filesize heuristics instead of visual metrics.', 'liteimage') . '</p>';
+            } elseif (!$imagick_caps['webp_supported']) {
+                echo '<p style="margin-top:12px;color:#d98c12;">' . esc_html__('Imagick is available but does not list WebP in its format registry. Ensure WebP delegates are installed to unlock Imagick-based conversions.', 'liteimage') . '</p>';
+            } else {
+                echo '<p style="margin-top:12px;opacity:0.85;">' . esc_html__('Imagick is ready for PSNR-based smart compression and WebP generation.', 'liteimage') . '</p>';
+            }
+        }
+        echo '</div>';
     }
 
     /**
