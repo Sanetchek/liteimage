@@ -15,6 +15,7 @@ use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
 use Intervention\Image\Interfaces\ImageInterface;
 use LiteImage\Config;
 use LiteImage\Support\Logger;
+use LiteImage\Support\MemoryGuard;
 use LiteImage\Support\WebPSupport;
 use LiteImage\Admin\Settings;
 use LiteImage\Admin\AdminPage;
@@ -358,6 +359,8 @@ class ThumbnailGenerator
      */
     private static function load_image($file_path, $extension)
     {
+        $memoryTicket = MemoryGuard::ensureForImage($file_path);
+
         try {
             // Choose driver based on available PHP extensions
             if (extension_loaded('gd')) {
@@ -376,6 +379,8 @@ class ThumbnailGenerator
         } catch (\Exception $e) {
             Logger::log("Intervention Image 3.x failed: " . $e->getMessage());
             return null;
+        } finally {
+            MemoryGuard::restore($memoryTicket);
         }
     }
 
