@@ -22,12 +22,12 @@ defined('ABSPATH') || exit;
  */
 class Settings
 {
-    public const DEFAULT_THUMBNAIL_QUALITY = 82;
+    public const DEFAULT_THUMBNAIL_QUALITY = 75;
     public const DEFAULT_SMART_COMPRESSION_ENABLED = true;
-    public const DEFAULT_SMART_MIN_QUALITY = 80;
-    public const DEFAULT_SMART_TARGET_PSNR = 44.5;
-    public const DEFAULT_SMART_MAX_ITERATIONS = 6;
-    public const DEFAULT_SMART_MIN_SAVINGS_PERCENT = 4.0;
+    public const DEFAULT_SMART_MIN_QUALITY = 75;
+    public const DEFAULT_SMART_TARGET_PSNR = 41.5;
+    public const DEFAULT_SMART_MAX_ITERATIONS = 10;
+    public const DEFAULT_SMART_MIN_SAVINGS_PERCENT = 8.0;
 
     /**
      * Singleton instance

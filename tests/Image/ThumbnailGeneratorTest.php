@@ -75,10 +75,10 @@ class ThumbnailGeneratorTest extends TestCase
             sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'smart-thumb.webp',
             'webp',
             false,
-            82,
+            80,
             [
                 'enabled' => true,
-                'initial_quality' => 82,
+                'initial_quality' => 80,
                 'min_quality' => 80,
                 'target_psnr' => 44.5,
                 'max_iterations' => 6,
@@ -111,7 +111,7 @@ class ThumbnailGeneratorTest extends TestCase
             sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'unused.webp',
             'jpg',
             false,
-            82,
+            80,
             [
                 'enabled' => true,
                 'context' => [
@@ -139,7 +139,7 @@ class ThumbnailGeneratorTest extends TestCase
 
         $image->expects($this->once())
             ->method('toJpeg')
-            ->with(82)
+            ->with(80)
             ->willReturn($encoded);
 
         $encoded->expects($this->once())
@@ -158,10 +158,10 @@ class ThumbnailGeneratorTest extends TestCase
             $destPath,
             'jpeg',
             false,
-            82,
+            80,
             [
                 'enabled' => false,
-                'initial_quality' => 82,
+                'initial_quality' => 80,
                 'context' => [
                     'size_name' => 'landscape',
                     'density' => '1x',
