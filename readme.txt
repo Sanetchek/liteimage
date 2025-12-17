@@ -4,7 +4,7 @@ Tags: images, optimization, thumbnails, webp, responsive
 Requires at least: 5.8
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 3.3.0
+Stable tag: 3.3.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,10 @@ Go to Tools > LiteImage Settings and use the available cleanup buttons.
 3. Media Library showing dynamic sizes
 
 == Changelog ==
+
+= 3.3.1 =
+* Fixed: Thumbnail filename conflicts when multiple images share the same filename. Added attachment ID to thumbnail filenames to ensure uniqueness.
+* Fixed: Format changed from `{filename}-{size_name}.{ext}` to `{filename}-{attachment_id}-{size_name}.{ext}` for all thumbnail variants (WebP, original format, and retina @2x versions).
 
 = 3.3.0 =
 * Added: Gutenberg block **LiteImage Image** with full responsive controls for desktop/mobile sources, breakpoints, and HTML attributes.

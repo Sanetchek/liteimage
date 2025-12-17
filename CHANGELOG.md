@@ -5,6 +5,24 @@ All notable changes to LiteImage will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.1] - 2025-12-15
+
+> **🐛 Bugfix Release: Unique Thumbnail Filenames**
+>
+> Fixes thumbnail filename conflicts when multiple images share the same filename.
+
+### 🐛 Fixed
+
+- **Thumbnail Generation**: Added attachment ID to thumbnail filenames to ensure uniqueness when multiple images have identical filenames. This prevents WordPress from serving incorrect thumbnails when images share the same base filename.
+  - Format changed from: `{filename}-{size_name}.{ext}`
+  - To: `{filename}-{attachment_id}-{size_name}.{ext}`
+  - Affects all thumbnail variants: WebP, original format, and retina (@2x) versions
+
+### Technical Details
+
+- `src/Image/ThumbnailGenerator.php` – Updated `generate_thumbnails()` method to include attachment ID in all generated thumbnail filenames (WebP, original format, retina variants)
+- Thumbnail cleanup functionality remains unchanged and works correctly with the new naming format
+
 ## [3.3.0] - 2025-11-07
 
 > **🚀 Feature Release: Gutenberg Block & Brand Refresh**
@@ -395,12 +413,3 @@ This release addresses all issues from WordPress.org plugin review:
 - Dynamic thumbnail generation
 - WebP support
 - Basic admin interface
-
-[3.3.0]: https://github.com/Sanetchek/liteimage/compare/v3.2.1...v3.3.0
-[3.2.1]: https://github.com/Sanetchek/liteimage/compare/v3.2.0...v3.2.1
-[3.2.0]: https://github.com/Sanetchek/liteimage/compare/v3.1.0...v3.2.0
-[3.1.0]: https://github.com/Sanetchek/liteimage/compare/v2.1.0...v3.1.0
-[2.1.0]: https://github.com/Sanetchek/liteimage/compare/v2.0.0...v2.1.0
-[2.0.0]: https://github.com/Sanetchek/liteimage/compare/v1.0.0...v2.0.0
-[1.0.0]: https://github.com/Sanetchek/liteimage/releases/tag/v1.0.0
-

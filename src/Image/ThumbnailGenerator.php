@@ -142,22 +142,22 @@ class ThumbnailGenerator
             $updated_size_name = $size_name;
             $webp_path = str_replace(
                 basename($file_path),
-                basename($file_path, '.' . $original_extension) . "-$size_name.webp",
+                basename($file_path, '.' . $original_extension) . "-$attachment_id-$size_name.webp",
                 $file_path
             );
             $orig_ext_path = str_replace(
                 basename($file_path),
-                basename($file_path, '.' . $original_extension) . "-$size_name." . $original_extension,
+                basename($file_path, '.' . $original_extension) . "-$attachment_id-$size_name." . $original_extension,
                 $file_path
             );
             $retina_webp_path = str_replace(
                 basename($file_path),
-                basename($file_path, '.' . $original_extension) . "-$retina_size_name.webp",
+                basename($file_path, '.' . $original_extension) . "-$attachment_id-$retina_size_name.webp",
                 $file_path
             );
             $retina_orig_path = str_replace(
                 basename($file_path),
-                basename($file_path, '.' . $original_extension) . "-$retina_size_name." . $original_extension,
+                basename($file_path, '.' . $original_extension) . "-$attachment_id-$retina_size_name." . $original_extension,
                 $file_path
             );
 
