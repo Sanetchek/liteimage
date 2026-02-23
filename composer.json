@@ -1,7 +1,7 @@
 {
   "name": "sanetchek/liteimage",
   "type": "wordpress-plugin",
-  "version": "3.3.0",
+  "version": "3.3.2",
   "description": "Image optimization plugin for WordPress using Intervention Image.",
   "keywords": ["WordPress", "Plugin", "Image Optimization", "WebP", "Intervention Image"],
   "license": "GPL-2.0-or-later",

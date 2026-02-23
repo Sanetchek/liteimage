@@ -3,7 +3,7 @@
 /*
 Plugin Name: LiteImage
 Description: Optimizes images with dynamic thumbnails, WebP support, and accessibility.
-Version: 3.3.1
+Version: 3.3.2
 Author: Oleksandr Gryshko
 Author URI: https://github.com/Sanetchek
 Text Domain: liteimage
@@ -143,12 +143,17 @@ function liteimage($image_id, $data = [], $mobile_image_id = null)
 function liteimage_downsize($id, $size = 'medium')
 {
     $meta = wp_get_attachment_metadata($id);
-    $orig_width = $meta['width'] ? $meta['width'] : 0;
-    $orig_height = $meta['height'] ? $meta['height'] : 0;
+    $orig_width = isset($meta['width']) ? (int) $meta['width'] : 0;
+    $orig_height = isset($meta['height']) ? (int) $meta['height'] : 0;
 
     if (is_array($size) && isset($size[0], $size[1])) {
         $width = $size[0];
         $height = $size[1];
+
+        // Original size: [0, 0] means use attachment dimensions
+        if ((int) $width === 0 && (int) $height === 0 && $orig_width > 0 && $orig_height > 0) {
+            return [$orig_width, $orig_height];
+        }
 
         // If only one dimension is provided, resize proportionally
         if ($width && !$height) {

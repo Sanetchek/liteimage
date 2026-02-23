@@ -9,6 +9,7 @@ LiteImage is a lightweight, developer-friendly WordPress plugin that optimizes i
 ## ✨ Features
 
 - 🖼️ **Dynamic Thumbnails** - Generate only the sizes you need on-demand
+- 📐 **Original Size** - Convert without resizing when `thumb` is `'full'` or `[0, 0]`
 - 🚀 **WebP Support** - Automatic WebP conversion with fallback
 - 📱 **Responsive Images** - Serve the right image for the right device
 - ♿ **Accessibility** - Built-in alt text and ARIA support
@@ -113,7 +114,7 @@ liteimage(int $image_id, array $data = [], int|null $mobile_image_id = null)
 
 - `$image_id` - WordPress attachment ID
 - `$data` - Configuration array:
-  - `thumb` - Default size: `'full'` or `[width, height]`
+  - `thumb` - Default size: `'full'` or `[width, height]`. Use `'full'` or `[0, 0]` for output and conversion at original size (no resize).
   - `args` - HTML attributes: `['alt' => '...', 'class' => '...']`
   - `min` - Min-width breakpoints: `['768' => [1920, 0]]`
   - `max` - Max-width breakpoints: `['767' => [768, 480]]`

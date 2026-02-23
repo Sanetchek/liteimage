@@ -5,6 +5,20 @@ All notable changes to LiteImage will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.2] - 2026-02-23
+
+### Added
+
+- **Original size conversion**: When `thumb` is `'full'` or `[0, 0]`, images are converted (WebP and original format) at full dimensions without resizing.
+- `liteimage_downsize($id, [0, 0])` now returns the original image width and height.
+- `get_thumb_size('full', $id)` and `get_thumb_size([0, 0], $id)` return the correct `size_name` in format `liteimage-{width}x{height}` and register the size for metadata.
+- Guard in `ThumbnailGenerator::resizeImage()` when width and height are 0 (uses image dimensions to avoid invalid scale call).
+- PHPUnit tests for original size behavior (`tests/OriginalSizeConversionTest.php`, `tests/bootstrap_original_size.php`).
+
+### Fixed
+
+- Safe reading of `width` and `height` from attachment metadata in `liteimage_downsize()` using `isset()` to avoid undefined array key when metadata is empty or incomplete.
+
 ## [3.3.1] - 2025-12-15
 
 > **🐛 Bugfix Release: Unique Thumbnail Filenames**

@@ -4,11 +4,11 @@ Tags: images, optimization, thumbnails, webp, responsive
 Requires at least: 5.8
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 3.3.1
+Stable tag: 3.3.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Optimizes images with dynamic thumbnails, WebP support, and endsibility for faster, responsive WordPress sites.
+Optimizes images with dynamic thumbnails, WebP support, and accessibility for faster, responsive WordPress sites.
 
 == Description ==
 
@@ -53,6 +53,12 @@ Go to Tools > LiteImage Settings and use the available cleanup buttons.
 3. Media Library showing dynamic sizes
 
 == Changelog ==
+
+= 3.3.2 =
+* Added: Support for conversion at original size — when `thumb` is `'full'` or `[0, 0]`, images are converted (WebP and original format) without resizing.
+* Added: In `liteimage_downsize()`, size `[0, 0]` now returns the original image dimensions.
+* Added: In `get_thumb_size()`, support for `'full'` and `[0, 0]` with correct `size_name` in format `liteimage-{width}x{height}`.
+* Fixed: Safe reading of `width`/`height` from attachment metadata in `liteimage_downsize()` when keys are missing.
 
 = 3.3.1 =
 * Fixed: Thumbnail filename conflicts when multiple images share the same filename. Added attachment ID to thumbnail filenames to ensure uniqueness.

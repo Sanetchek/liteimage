@@ -47,6 +47,25 @@ class ThumbnailGenerator
     {
         $thumb_data = ['size_name' => 'full', 'width' => 0, 'height' => 0];
 
+        $is_original_size = $thumb === 'full'
+            || (is_array($thumb) && isset($thumb[0], $thumb[1]) && (int) $thumb[0] === 0 && (int) $thumb[1] === 0);
+
+        if ($is_original_size && $attachment_id) {
+            $image_data = liteimage_downsize($attachment_id, [0, 0]);
+            if ($image_data && $image_data[0] > 0 && $image_data[1] > 0) {
+                $thumb_data['width'] = $image_data[0];
+                $thumb_data['height'] = $image_data[1];
+                $thumb_data['size_name'] = Config::THUMBNAIL_PREFIX . "{$thumb_data['width']}x{$thumb_data['height']}";
+                add_image_size(
+                    $thumb_data['size_name'],
+                    $thumb_data['width'],
+                    $thumb_data['height'],
+                    false
+                );
+            }
+            return $thumb_data;
+        }
+
         if (is_array($thumb) && isset($thumb[0], $thumb[1])) {
             $image_data = liteimage_downsize($attachment_id, [$thumb[0], $thumb[1]]);
             if ($image_data) {
@@ -579,6 +598,12 @@ class ThumbnailGenerator
     private static function resizeImage(ImageInterface $image, $width, $height, $crop)
     {
         try {
+            // Use original dimensions when 0x0 is passed (e.g. original-size conversion)
+            if ((int) $width === 0 && (int) $height === 0) {
+                $width = $image->width();
+                $height = $image->height();
+            }
+
             if ($crop) {
                 return $image->cover($width, $height);
             }
